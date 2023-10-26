@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "info-fond"
+version = "0.1.0"
+description = ""
+authors = ["Hugo Charels <hugo.charels@ulb.be>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.10,<4.0"
+automata-lib = "^8.1.0"
+pysat = "^3.1.0"
+
+[tool.poetry.dev-dependencies]
+pytest = "^7.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+
+[tool.ruff]
+# Check https://beta.ruff.rs/docs/rules/ for all rules
+fixable = ["ALL"]
+
+# Do not fix imports automatically (it removes unused imports in __init__.py files)
+# unfixable = ["F401"]
+line-length = 140
