@@ -17,6 +17,8 @@ vpool = IDPool(start_from=1)
 P_ID = 0 # si l'état est présent dans l'automate
 A_ID = 1 # si l'état est accpetant
 T_ID = 2 # les transitions
+V_ID = 3 # visiter
+
 
 def p(n: int) -> int:
     return vpool.id((P_ID, n))
@@ -26,6 +28,9 @@ def a(n: int) -> int:
 
 def t(i: int, j: int, l: str) -> int:
     return vpool.id((T_ID, i, j, l))
+
+def v(n: int, i: int, w: int) -> int:
+    return vpool.id((V_ID, n, i, w))
 
 #####################################################
 
@@ -63,8 +68,56 @@ def _transitions_are_valid(**args):
             yield [p(i)] + clause
             yield [p(j)] + clause
 
+def _acceptant(**args):
+    """ Tous les mots de P sont acceptés """
+    pos = args["pos"]
+    k = args['k']
+    
+    for w_id, word in enumerate(pos):
+        # La première lettre du mot commence à l'état source
+        yield [v(0, 0, w_id)]
+        
+        # Pour chaque lettre subséquente dans le mot
+        for i, letter in enumerate(word):
+            # Il doit exister une transition valide
+            clause = []
+            for j in range(k):
+                clause.append(-v(j, i, w_id))
+                for l in range(k):
+                    clause.append(t(j, l, letter) and v(l, i + 1, w_id))
+            yield clause
+        
+        # La dernière lettre du mot mène à un état acceptant
+        yield [a(j) for j in range(k) if v(j, len(word), w_id) in args]
 
-# TODO
+def _non_acceptant(**args):
+    """ Tous les mots de N sont non acceptés """
+    neg = args["neg"]
+    k = args['k']
+    
+    for w_id, word in enumerate(neg):
+        # La première lettre du mot commence à l'état source
+        yield [v(0, 0, w_id)]
+        
+        # Pour chaque lettre subséquente dans le mot
+        for i, letter in enumerate(word):
+            # Il doit exister une transition valide
+            clause = []
+            for j in range(k):
+                clause.append(-v(j, i, w_id))
+                for l in range(k):
+                    clause.append(t(j, l, letter) and v(l, i + 1, w_id))
+            yield clause
+        
+        # La dernière lettre du mot ne mène pas à un état acceptant
+        clause = []
+        for j in range(k):
+            if v(j, len(word), w_id) in args:
+                clause.append(-a(j))
+        yield clause
+
+
+
 
 
 #####################################################
@@ -167,12 +220,11 @@ def gen_aut(alphabet: str, pos: list[str], neg: list[str], k: int) -> DFA:
         _ac_states_are_in_aut,
         _aut_is_complete,
         _transitions_are_valid,
-        # TODO
+        _acceptant,
+        _non_acceptant
     ]
     cnf = _gen_cnf(constraints, alphabet, pos, neg, k)
     result, model = _solve(cnf)
-    print(f"Résultat : {result}")
-    if result: _print_model(model)
     return _from_model_to_dfa(model, alphabet, k) if result else None
 
 
