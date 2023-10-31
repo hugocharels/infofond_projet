@@ -101,7 +101,6 @@ def _get_final_states_from_model(model: list[int]) -> set[int]:
             ret.add(f"q{vpool.obj(var)[1]}")
     return ret
 
-
 def _get_transitions_from_model(model: list[int], alphabet: str, k: int) -> dict[tuple[int, str], int]:
     """ Retourne l'ensemble des transitions présentes dans le modèle"""
     transitions = {f"q{i}" : {} for i in range(k) if p(i) in model}
@@ -172,6 +171,8 @@ def gen_aut(alphabet: str, pos: list[str], neg: list[str], k: int) -> DFA:
     ]
     cnf = _gen_cnf(constraints, alphabet, pos, neg, k)
     result, model = _solve(cnf)
+    print(f"Résultat : {result}")
+    if result: _print_model(model)
     return _from_model_to_dfa(model, alphabet, k) if result else None
 
 
