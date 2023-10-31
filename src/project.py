@@ -17,7 +17,7 @@ vpool = IDPool(start_from=1)
 P_ID = 0 # si l'état est présent dans l'automate
 A_ID = 1 # si l'état est accpetant
 T_ID = 2 # les transitions
-V_ID = 3 # visiter
+V_ID = 3 # les états visiter lors de l'éxécution
 
 
 def p(n: int) -> int:
@@ -68,57 +68,13 @@ def _transitions_are_valid(**args):
             yield [p(i)] + clause
             yield [p(j)] + clause
 
-def _acceptant(**args):
-    """ Tous les mots de P sont acceptés """
-    pos = args["pos"]
-    k = args['k']
-    
-    for w_id, word in enumerate(pos):
-        # La première lettre du mot commence à l'état source
-        yield [v(0, 0, w_id)]
-        
-        # Pour chaque lettre subséquente dans le mot
-        for i, letter in enumerate(word):
-            # Il doit exister une transition valide
-            clause = []
-            for j in range(k):
-                clause.append(-v(j, i, w_id))
-                for l in range(k):
-                    clause.append(t(j, l, letter) and v(l, i + 1, w_id))
-            yield clause
-        
-        # La dernière lettre du mot mène à un état acceptant
-        yield [a(j) for j in range(k) if v(j, len(word), w_id) in args]
+def _ex_are_ac(**args):
+    """ Toutes les exécutions des mots de pos sont acceptante """
+    pass
 
-def _non_acceptant(**args):
-    """ Tous les mots de N sont non acceptés """
-    neg = args["neg"]
-    k = args['k']
-    
-    for w_id, word in enumerate(neg):
-        # La première lettre du mot commence à l'état source
-        yield [v(0, 0, w_id)]
-        
-        # Pour chaque lettre subséquente dans le mot
-        for i, letter in enumerate(word):
-            # Il doit exister une transition valide
-            clause = []
-            for j in range(k):
-                clause.append(-v(j, i, w_id))
-                for l in range(k):
-                    clause.append(t(j, l, letter) and v(l, i + 1, w_id))
-            yield clause
-        
-        # La dernière lettre du mot ne mène pas à un état acceptant
-        clause = []
-        for j in range(k):
-            if v(j, len(word), w_id) in args:
-                clause.append(-a(j))
-        yield clause
-
-
-
-
+def _ex_are_not_ac(**args):
+    """ Toutes les exécutions des mots de neg sont non acceptante """
+    pass
 
 #####################################################
 
@@ -134,7 +90,6 @@ def _from_model_to_dfa(model: list[int], alphabet: str, k: int) -> DFA:
         initial_state="q0",
         final_states=_get_final_states_from_model(model),
     )
-
 
 def _get_states_from_model(model: list[int]) -> set[int]:
     """ Retourne l'ensemble des états présents dans le modèle"""
@@ -164,14 +119,9 @@ def _get_transitions_from_model(model: list[int], alphabet: str, k: int) -> dict
             transitions[f"q{i}"][l] = f"q{j}"
     return transitions
 
-
 ######################################################
 
-
-
-
 #################### UTILS ####################
-
 
 def _gen_cnf(constraints: list[list[int]], alphabet: str, pos: list[str], neg: list[str], k: int) -> CNF:
     """ Génère une CNF à partir d'une liste de contraintes"""
@@ -181,14 +131,11 @@ def _gen_cnf(constraints: list[list[int]], alphabet: str, pos: list[str], neg: l
             cnf.append(clause)
     return cnf
 
-
 def _solve(cnf: CNF) -> (bool, list[int]):
     """ Résoud une CNF"""
     solver = Minisat22(use_timer=True)
     solver.append_formula(cnf, no_return=False)
     return solver.solve(), solver.get_model()
-
-
 
 def _print_model(model: list[int]) -> None:
     """ Affiche un modèle"""
@@ -202,11 +149,7 @@ def _print_model(model: list[int]) -> None:
             _, i, j, l = vpool.obj(var)
             print(f"q{i} --{l}--> q{j}")
 
-
-
-
-
-
+###############################################
 
 #################### QUESTIONS ####################
 
@@ -220,13 +163,15 @@ def gen_aut(alphabet: str, pos: list[str], neg: list[str], k: int) -> DFA:
         _ac_states_are_in_aut,
         _aut_is_complete,
         _transitions_are_valid,
-        _acceptant,
-        _non_acceptant
+        #_ex_are_ac,
+        #_ex_are_not_ac,
     ]
     cnf = _gen_cnf(constraints, alphabet, pos, neg, k)
+    #print(cnf.clauses)
     result, model = _solve(cnf)
+    print(result)
+    if result: _print_model(model)
     return _from_model_to_dfa(model, alphabet, k) if result else None
-
 
 # Q3
 def gen_minaut(alphabet: str, pos: list[str], neg: list[str]) -> DFA:
@@ -256,7 +201,7 @@ def gen_autn(alphabet: str, pos: list[str], neg: list[str], k: int) -> NFA:
 ######################################################
 
 
-def main():
+def main():   
     test_aut()
     #test_minaut()
     #test_autc()
