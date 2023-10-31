@@ -26,8 +26,8 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pytest automata-lib python-sat matplotlib
+        pip install automata-lib python-sat matplotlib
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Test with pytest
       run: |
-        pytest src/tests.py
+        python3 src/tests.py
