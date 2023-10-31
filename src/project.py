@@ -43,46 +43,73 @@ def _ac_state_is_present(k: int):
     """ Si un état est acceptant, il est présent dans l'automate"""
     for n in range(k): yield [-a(n), p(n)]
 
+# TODO
 
 
 
 # Q2
 def gen_aut(alphabet: str, pos: list[str], neg: list[str], k: int) -> DFA:
-    # À COMPLÉTER
+    print("--------------------------")
+    print(f"E={alphabet}, P={pos}, N={neg}, k={k}")
+
+    CONTRAINTES = [
+        _at_least_one_state,
+        _at_least_one_ac_state,
+        _ac_state_is_present,
+        # TODO
+    ]
+
+    cnf = CNF()
+    for c in CONTRAINTES:
+        for clause in c(k):
+            cnf.append(clause)
+
+    solver = Minisat22(use_timer=True)
+    solver.append_formula(cnf, no_return=False)
+    
+    result = solver.solve()
+
+    print("satisfaisable : " + str(result))
+
+    print("Temps de resolution : " + '{0:.2f}s'.format(solver.time()))
+
+    print(solver.get_model())
+
+    # TODO
     return None
 
 # Q3
 def gen_minaut(alphabet: str, pos: list[str], neg: list[str]) -> DFA:
-    # À COMPLÉTER
+    # TODO
     return None
 
 # Q4
 def gen_autc(alphabet: str, pos: list[str], neg: list[str], k: int) -> DFA:
-    # À COMPLÉTER
+    # TODO
     return None
 
 # Q5
 def gen_autr(alphabet: str, pos: list[str], neg: list[str], k: int) -> DFA:
-    # À COMPLÉTER
+    # TODO
     return None
 
 # Q6
 def gen_autcard(alphabet: str, pos: list[str], neg: list[str], k: int, ell: int) -> DFA:
-    # À COMPLÉTER
+    # TODO
     return None
 
 # Q7
 def gen_autn(alphabet: str, pos: list[str], neg: list[str], k: int) -> NFA:
-    # À COMPLÉTER
+    # TODO
     return None
 
 def main():
     test_aut()
-    test_minaut()
-    test_autc()
-    test_autr()
-    test_autcard()
-    test_autn()
+    #test_minaut()
+    #test_autc()
+    #test_autr()
+    #test_autcard()
+    #test_autn()
 
 if __name__ == '__main__':
     main()
