@@ -78,13 +78,22 @@ def _all_ex_start_at_the_source(**args):
     for w in args["pos"] + args["neg"]:
         yield [v_id(0, 0, w)]
 
+def _only_one_state_visited_at_a_time(**args):
+
+    for w in args["pos"] + args["neg"]:
+        for x in range(len(w)):
+            for i in range(args["k"]):
+                for j in range(args["k"]):
+                    if i==j : continue
+                    yield [-v_id(i, x, w), -v_id(j, x, w)]
+
 def __aut_is_consistent(alphabet: str, s: list[str], k: int, factor: int):
     for w in s:
         if w == '': 
             yield [factor * a_id(0)]
             continue
 
-        for x in range(len(w)-1):
+        for x in range(len(w)):
             for i in range(k):
                 yield [-v_id(i, x, w)] + [y_id(i, j, x, w) for j in range(k)]
                 for j in range(k):
@@ -92,13 +101,6 @@ def __aut_is_consistent(alphabet: str, s: list[str], k: int, factor: int):
                     yield [-y_id(i, j, x, w), t_id(i, j, w[x])]
                     yield [-v_id(j, x+1, w), -t_id(i, j, w[x]), y_id(i,j,x,w)]
 
-        """
-        for x in range(len(w)-1):
-            for i in range (k):
-                for j in range(k):
-                    yield [-v_id(i, x, w)] + [v_id(j, x+1, w) for j in range(k)]
-                    yield [-v_id(i, x, w)] + [t_id(i, j, w[x]) for j in range(k)]
-        """
         for s in range(k):
             yield [-v_id(s, len(w), w), factor * a_id(s)]
 
@@ -185,13 +187,14 @@ def _print_model(model: list[int], alphabet: str, k: int) -> None:
 # Q2
 def gen_aut(alphabet: str, pos: list[str], neg: list[str], k: int) -> DFA:
     print("--------------------------")
-    print(f"E={set(alphabet)}, P={set(pos)}, N={set(neg)}, k={k}")
+    print(f"E={set(alphabet)}, P={pos}, N={neg}, k={k}")
     constraints = [
         _source_state_is_in_aut,
         _at_least_one_ac_state,
         _ac_states_are_in_aut,
         _transitions_are_valid,
         _all_ex_start_at_the_source,
+        _only_one_state_visited_at_a_time,
         _aut_is_consistent,
         #_aut_is_complete,
     ]
@@ -234,6 +237,8 @@ def gen_autn(alphabet: str, pos: list[str], neg: list[str], k: int) -> NFA:
 
 def main():
     #gen_aut('a',  ['', 'aa', 'aaaaaa'], ['a', 'aaa', 'aaaaa'], 2)
+    #gen_aut("ab", ["", "a", "aa", "aaa", "aaaa"], ["b", "ab", "ba", "bab", "aba"], 1)
+    #gen_aut("ab", ["b", "ab", "ba", "abba", "abbb"], ["", "a", "aa", "aaa"], 2)
     test_aut()
     #test_minaut()
     #test_autc()
