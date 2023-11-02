@@ -20,7 +20,7 @@ T_ID = 2 # les transitions
 V_ID = 3 # les états visiter lors de l'éxécution
 
 # transformation de tseitin
-X_ID = 4
+Y_ID = 4
 Z_ID = 5
 
 
@@ -40,9 +40,9 @@ def v_id(n: int, i: int, w: int) -> int:
     """ Est vrai si l'état n à été visité pour la ième lettre du mot w """
     return vpool.id((V_ID, n, i, w))
 
-def x_id(i: int, j: int, x: int, w: int, l: str):
+def y_id(i: int, j: int, x: int, w: int):
     """ hum """
-    return vpool.id((X_ID, i, j, x, w, l))
+    return vpool.id((Y_ID, i, j, x, w))
 
 def z_id(i: int, j: int, l: str):
     return vpool.id((Z_ID, i, j, l))
@@ -85,11 +85,20 @@ def __aut_is_consistent(alphabet: str, s: list[str], k: int, factor: int):
             continue
 
         for x in range(len(w)-1):
+            for i in range(k):
+                yield [-v_id(i, x, w)] + [y_id(i, j, x, w) for j in range(k)]
+                for j in range(k):
+                    yield [-y_id(i, j, x, w), v_id(j, x+1, w)]
+                    yield [-y_id(i, j, x, w), t_id(i, j, w[x])]
+                    yield [-v_id(j, x+1, w), -t_id(i, j, w[x]), y_id(i,j,x,w)]
+
+        """
+        for x in range(len(w)-1):
             for i in range (k):
                 for j in range(k):
                     yield [-v_id(i, x, w)] + [v_id(j, x+1, w) for j in range(k)]
                     yield [-v_id(i, x, w)] + [t_id(i, j, w[x]) for j in range(k)]
-
+        """
         for s in range(k):
             yield [-v_id(s, len(w), w), factor * a_id(s)]
 
@@ -184,6 +193,7 @@ def gen_aut(alphabet: str, pos: list[str], neg: list[str], k: int) -> DFA:
         _transitions_are_valid,
         _all_ex_start_at_the_source,
         _aut_is_consistent,
+        #_aut_is_complete,
     ]
     cnf = _gen_cnf(constraints, alphabet, pos, neg, k)
     #print(cnf.clauses)
