@@ -21,8 +21,7 @@ V_ID = 3 # les états visiter lors de l'éxécution
 
 # transformation de tseitin
 X_ID = 4
-Y_ID = 5
-Z_ID = 6
+Z_ID = 5
 
 
 def p_id(n: int) -> int:
@@ -41,13 +40,9 @@ def v_id(n: int, i: int, w: int) -> int:
     """ Est vrai si l'état n à été visité pour la ième lettre du mot w """
     return vpool.id((V_ID, n, i, w))
 
-def x_id(i: int, j: int, x: int, z: int, l: str):
+def x_id(i: int, j: int, x: int, w: int, l: str):
     """ hum """
-    return vpool.id((X_ID, i, j, x, z, l))
-
-def y_id(s: int, L: int, z: int):
-    """ hum """
-    return vpool.id((Y_ID, s, L, z))
+    return vpool.id((X_ID, i, j, x, w, l))
 
 def z_id(i: int, j: int, l: str):
     return vpool.id((Z_ID, i, j, l))
@@ -64,81 +59,55 @@ def _source_state_is_in_aut(**args):
 
 def _at_least_one_ac_state(**args):
     """ Il y a au moins un état acceptant dans l'automate"""
-    yield [a_id(n) for n in range(args['k'])]
+    yield [a_id(n) for n in range(args["k"])]
 
 def _ac_states_are_in_aut(**args):
     """ Tout les états acceptant sont dans l'automate"""
-    for n in range(args['k']): yield [-a_id(n), p_id(n)]
+    for n in range(args["k"]): yield [-a_id(n), p_id(n)]
 
-def _if_empty_word(**args):
-    yield [a_id(0)] if '' in args["pos"] else []
-    yield [-a_id(0)] if '' in args["neg"] else []
+def _transitions_are_valid(**args):
 
+    for i in range(args["k"]):
+        for j in range(args["k"]):
+            for l in args["alphabet"]:
+                yield [-t_id(i,j,l), p_id(i)]
+                yield [-t_id(i,j,l), p_id(j)]
 
-def _each_sate_is_reachable(**args):
-    yield [t_id(0, j, l) for j in range (1, args['k']) for l in args["alphabet"]]
-        
+def _all_ex_start_at_the_source(**args):
+    """ Toutes les exécutions commencent à la source """
+    for w in args["pos"] + args["neg"]:
+        yield [v_id(0, 0, w)]
+
+def __aut_is_consistent(alphabet: str, s: list[str], k: int, factor: int):
+    for w in s:
+        if w == '': 
+            yield [factor * a_id(0)]
+            continue
+
+        for x in range(len(w)-1):
+            for i in range (k):
+                for j in range(k):
+                    yield [-v_id(i, x, w)] + [v_id(j, x+1, w) for j in range(k)]
+                    yield [-v_id(i, x, w)] + [t_id(i, j, w[x]) for j in range(k)]
+
+        for s in range(k):
+            yield [-v_id(s, len(w), w), factor * a_id(s)]
+
+def _aut_is_consistent(**args):
+    for x, s in [(1, args["pos"]), (-1, args["neg"])]:
+        for clause in __aut_is_consistent(args["alphabet"], s, args["k"], x):
+            yield clause
 
 def _aut_is_complete(**args):
     """ L'automate est complet. Pour chaque état il y a une transition pour chaque lettre de l'alphabet """
-    for i in range(args['k']):
+    for i in range(args["k"]):
         for l in args["alphabet"]:
-            yield [-p_id(i)] + [z_id(i, j, l) for j in range(args['k'])]
-            for j in range(args['k']):
+            yield [-p_id(i)] + [z_id(i, j, l) for j in range(args["k"])]
+            for j in range(args["k"]):
                 yield [-z_id(i, j, l), p_id(j)]
                 yield [-z_id(i, j, l), t_id(i, j, l)]
                 yield [-p_id(j), -t_id(i, j, l), z_id(i, j, l)]
-            
-            yield [p_id(i)] + [-p_id(j) for j in range(args['k']) if j != i] + [-t_id(i,j,l) for j in range(args['k']) if j != i]
-
-def _ex_are_ac(**args):
-    """ Toutes les exécutions des mots de pos sont acceptante """
-    for z, w in enumerate(args["pos"]):
-        for x in range(len(w)-1):
-
-            for i in range(args['k']):
-                yield [x_id(i, j, x, z, w[x]) for j in range(args['k'])]
-
-        yield [y_id(s, len(w), z) for s in range(args['k'])]
-
-        for x in range(len(w)-1):
-
-            for i in range(args['k']):
-                for j in range(args['k']):
-                    yield [-x_id(i, j, x, z, w[x]), v_id(i, x, z)]
-                    yield [-x_id(i, j, x, z, w[x]), v_id(j, x+1, z)]
-                    yield [-x_id(i, j, x, z, w[x]), t_id(i, j, w[x])]
-                    yield [-v_id(i, x, z), -v_id(j, x+1, z), -t_id(i, j, w[x]), x_id(i, j, x, z, w[x])]
-
-        for s in range(args['k']):
-            yield [-y_id(s, len(w), z), v_id(s, len(w), z)]
-            yield [-y_id(s, len(w), z), a_id(s)]
-            yield [-v_id(s, len(w), z), -a_id(s), y_id(s, len(w), z)]
-
-def _ex_are_not_ac(**args):
-    """ Toutes les exécutions des mots de neg sont non acceptante """
-    for z, w in enumerate(args["neg"]):
-        for x in range(len(w)-1):
-
-            for i in range(args['k']):
-                yield [x_id(i, j, x, z, w[x]) for j in range(args['k'])]
-
-        yield [y_id(s, len(w), z) for s in range(args['k'])]
-
-        for x in range(len(w)-1):
-
-            for i in range(args['k']):
-                for j in range(args['k']):
-                    yield [-x_id(i, j, x, z, w[x]), v_id(i, x, z)]
-                    yield [-x_id(i, j, x, z, w[x]), v_id(j, x+1, z)]
-                    yield [-x_id(i, j, x, z, w[x]), t_id(i, j, w[x])]
-                    yield [-v_id(i, x, z), -v_id(j, x+1, z), -t_id(i, j, w[x]), x_id(i, j, x, z, w[x])]
-
-        for s in range(args['k']):
-            yield [-y_id(s, len(w), z), v_id(s, len(w), z)]
-            yield [-y_id(s, len(w), z), -a_id(s)]
-            yield [-v_id(s, len(w), z), a_id(s), y_id(s, len(w), z)]
-
+            yield [p_id(i)] + [-p_id(j) for j in range(args["k"])] + [-t_id(i,j,l) for j in range(args["k"])]
 
 #####################################################
 
@@ -148,40 +117,29 @@ def _ex_are_not_ac(**args):
 def _from_model_to_dfa(model: list[int], alphabet: str, k: int) -> DFA:
     """ Convertit un modèle SAT en un DFA"""
     return DFA(
-        states=_get_states_from_model(model),
+        states=_get_states_from_model(model, k),
         input_symbols=set(alphabet),
         transitions=_get_transitions_from_model(model, alphabet, k),
         initial_state="q0",
-        final_states=_get_final_states_from_model(model),
+        final_states=_get_final_states_from_model(model, k),
     )
 
-def _get_states_from_model(model: list[int]) -> set[int]:
+def _get_states_from_model(model: list[int], k: int) -> set[int]:
     """ Retourne l'ensemble des états présents dans le modèle"""
-    ret = set()
-    for var in model:
-        #print(var, vpool.obj(abs(var)))
-        if vpool.obj(var) is None: continue
-        if vpool.obj(var)[0] == P_ID:
-            ret.add(f"q{vpool.obj(var)[1]}")
-    return ret
+    return {f"q{i}" for i in range(k) if p_id(i) in model}
 
-def _get_final_states_from_model(model: list[int]) -> set[int]:
+def _get_final_states_from_model(model: list[int], k) -> set[int]:
     """ Retourne l'ensemble des états acceptants présents dans le modèle"""
-    ret = set()
-    for var in model:
-        if vpool.obj(var) is None: continue
-        if vpool.obj(var)[0] == A_ID:
-            ret.add(f"q{vpool.obj(var)[1]}")
-    return ret
+    return {f"q{i}" for i in range(k) if a_id(i) in model}
 
 def _get_transitions_from_model(model: list[int], alphabet: str, k: int) -> dict[tuple[int, str], int]:
     """ Retourne l'ensemble des transitions présentes dans le modèle"""
     transitions = {f"q{i}" : {} for i in range(k) if p_id(i) in model}
-    for var in model:
-        if vpool.obj(var) is None: continue
-        if vpool.obj(var)[0] == T_ID:
-            _, i, j, l = vpool.obj(var)
-            transitions[f"q{i}"][l] = f"q{j}"
+    for i in range(k):
+        for j in range(k):
+            for l in alphabet:
+                if t_id(i, j, l) in model:
+                    transitions[f"q{i}"][l] = f"q{j}"
     return transitions
 
 ######################################################
@@ -200,21 +158,16 @@ def _gen_cnf(constraints: list[list[int]], alphabet: str, pos: list[str], neg: l
 def _solve(cnf: CNF) -> (bool, list[int]):
     """ Résoud une CNF"""
     solver = Minisat22(use_timer=True)
-    solver.append_formula(cnf, no_return=False)
+    #solver = Minicard(use_timer=True)
+    solver.append_formula(cnf)
     return solver.solve(), solver.get_model()
 
-def _print_model(model: list[int]) -> None:
+def _print_model(model: list[int], alphabet: str, k: int) -> None:
     """ Affiche un modèle"""
-    print("--> q0")
-    for var in model:
-        if vpool.obj(var) is None: continue
-        if vpool.obj(var)[0] == P_ID:
-            print(f"q{vpool.obj(var)[1]} est présent")
-        if vpool.obj(var)[0] == A_ID:
-            print(f"q{vpool.obj(var)[1]} est acceptant")
-        if vpool.obj(var)[0] == T_ID:
-            _, i, j, l = vpool.obj(var)
-            print(f"q{i} --{l}--> q{j}")
+    print(f"states={_get_states_from_model(model, k)}")
+    print(f"final_states={_get_final_states_from_model(model, k)}")
+    print(f"transitions={_get_transitions_from_model(model, alphabet, k)}")
+
 
 ###############################################
 
@@ -228,18 +181,16 @@ def gen_aut(alphabet: str, pos: list[str], neg: list[str], k: int) -> DFA:
         _source_state_is_in_aut,
         _at_least_one_ac_state,
         _ac_states_are_in_aut,
-        _if_empty_word,
-        _each_sate_is_reachable,
-        _aut_is_complete,
-        _ex_are_ac,
-        _ex_are_not_ac,
+        _transitions_are_valid,
+        _all_ex_start_at_the_source,
+        _aut_is_consistent,
     ]
     cnf = _gen_cnf(constraints, alphabet, pos, neg, k)
     #print(cnf.clauses)
     result, model = _solve(cnf)
     #print(result)
     if result:
-        _print_model(model)
+        _print_model(model, alphabet, k)
         show_automaton(_from_model_to_dfa(model, alphabet, k))
     return _from_model_to_dfa(model, alphabet, k) if result else None
 
@@ -271,11 +222,9 @@ def gen_autn(alphabet: str, pos: list[str], neg: list[str], k: int) -> NFA:
 ######################################################
 
 
-def main():   
-    
-    gen_aut('a',  ['', 'aa', 'aaaaaa'], ['a', 'aaa', 'aaaaa'], 2)
-
-    #test_aut()
+def main():
+    #gen_aut('a',  ['', 'aa', 'aaaaaa'], ['a', 'aaa', 'aaaaa'], 2)
+    test_aut()
     #test_minaut()
     #test_autc()
     #test_autr()
