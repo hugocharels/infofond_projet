@@ -20,8 +20,7 @@ T_ID = 2 # les transitions
 V_ID = 3 # les états visiter lors de l'éxécution
 
 # transformation de tseitin
-Y_ID = 4
-Z_ID = 5
+Z_ID = 4
 
 
 def p_id(n: int) -> int:
@@ -40,10 +39,6 @@ def v_id(n: int, i: int, w: int) -> int:
     """ Est vrai si l'état n à été visité pour la ième lettre du mot w """
     return vpool.id((V_ID, n, i, w))
 
-def y_id(i: int, j: int, x: int, w: int):
-    """ hum """
-    return vpool.id((Y_ID, i, j, x, w))
-
 def z_id(i: int, j: int, l: str):
     return vpool.id((Z_ID, i, j, l))
 
@@ -56,6 +51,7 @@ def z_id(i: int, j: int, l: str):
 def _source_state_is_in_aut(**args):
     """ La source est présente dans l'automate"""
     yield [p_id(0)]
+    for l in args["alphabet"]: yield [t_id(0, n, l) for n in range(args["k"])]
 
 def _at_least_one_ac_state(**args):
     """ Il y a au moins un état acceptant dans l'automate"""
@@ -66,48 +62,41 @@ def _ac_states_are_in_aut(**args):
     for n in range(args["k"]): yield [-a_id(n), p_id(n)]
 
 def _transitions_are_valid(**args):
-
+    """ Toutes les transitions sont valides"""
     for i in range(args["k"]):
         for j in range(args["k"]):
             for l in args["alphabet"]:
                 yield [-t_id(i,j,l), p_id(i)]
                 yield [-t_id(i,j,l), p_id(j)]
 
-def _all_ex_start_at_the_source(**args):
-    """ Toutes les exécutions commencent à la source """
+def _aut_is_consistent(**args):
+    """ L'automate est consistant."""
+    # Toutes les exécutions commencent à la source
     for w in args["pos"] + args["neg"]:
         yield [v_id(0, 0, w)]
 
-def _only_one_state_visited_at_a_time(**args):
+    # Toutes les exécutions finissent sur un état acceptant
+    for w in args["pos"]:
+        for n in range(args["k"]):
+            yield [-v_id(n, len(w), w), a_id(n)]
+    for w in args["neg"]:
+        for n in range(args["k"]):
+            yield [-v_id(n, len(w), w), -a_id(n)]
 
+    # Un seul état peut être visité en même temps
     for w in args["pos"] + args["neg"]:
         for x in range(len(w)):
             for i in range(args["k"]):
                 for j in range(args["k"]):
                     if i==j : continue
-                    yield [-v_id(i, x, w), -v_id(j, x, w)]
+                    yield [-v_id(i, x, w), -v_id(j, x+1, w)]
 
-def __aut_is_consistent(alphabet: str, s: list[str], k: int, factor: int):
-    for w in s:
-        if w == '': 
-            yield [factor * a_id(0)]
-            continue
-
-        for x in range(len(w)):
-            for i in range(k):
-                yield [-v_id(i, x, w)] + [y_id(i, j, x, w) for j in range(k)]
-                for j in range(k):
-                    yield [-y_id(i, j, x, w), v_id(j, x+1, w)]
-                    yield [-y_id(i, j, x, w), t_id(i, j, w[x])]
-                    yield [-v_id(j, x+1, w), -t_id(i, j, w[x]), y_id(i,j,x,w)]
-
-        for s in range(k):
-            yield [-v_id(s, len(w), w), factor * a_id(s)]
-
-def _aut_is_consistent(**args):
-    for x, s in [(1, args["pos"]), (-1, args["neg"])]:
-        for clause in __aut_is_consistent(args["alphabet"], s, args["k"], x):
-            yield clause
+    # Toutes les exécutions suivent les transitions
+    for w in args["pos"] + args["neg"]:
+        for x in range(len(w)-1):
+            for i in range(args["k"]):
+                for j in range(args["k"]):
+                    yield [-v_id(i, x, w), -t_id(i, j, w[x]), v_id(j, x+1, w)]
 
 def _aut_is_complete(**args):
     """ L'automate est complet. Pour chaque état il y a une transition pour chaque lettre de l'alphabet """
@@ -184,28 +173,28 @@ def _print_model(model: list[int], alphabet: str, k: int) -> None:
 
 #################### QUESTIONS ####################
 
-# Q2
-def gen_aut(alphabet: str, pos: list[str], neg: list[str], k: int) -> DFA:
+def _gen_aut(constraints : list, alphabet: str, pos: list[str], neg: list[str], k: int) -> DFA:
+    """ Génère un automate à partir d'une liste de contraintes"""
     print("--------------------------")
     print(f"E={set(alphabet)}, P={pos}, N={neg}, k={k}")
+    cnf = _gen_cnf(constraints, alphabet, pos, neg, k)
+    result, model = _solve(cnf)
+    if result:
+        _print_model(model, alphabet, k)
+        #show_automaton(_from_model_to_dfa(model, alphabet, k))
+    return _from_model_to_dfa(model, alphabet, k) if result else None
+
+# Q2
+def gen_aut(alphabet: str, pos: list[str], neg: list[str], k: int) -> DFA:
     constraints = [
         _source_state_is_in_aut,
         _at_least_one_ac_state,
         _ac_states_are_in_aut,
         _transitions_are_valid,
-        _all_ex_start_at_the_source,
-        _only_one_state_visited_at_a_time,
         _aut_is_consistent,
         #_aut_is_complete,
     ]
-    cnf = _gen_cnf(constraints, alphabet, pos, neg, k)
-    #print(cnf.clauses)
-    result, model = _solve(cnf)
-    #print(result)
-    if result:
-        _print_model(model, alphabet, k)
-        show_automaton(_from_model_to_dfa(model, alphabet, k))
-    return _from_model_to_dfa(model, alphabet, k) if result else None
+    return _gen_aut(constraints, alphabet, pos, neg, k)
 
 # Q3
 def gen_minaut(alphabet: str, pos: list[str], neg: list[str]) -> DFA:
@@ -214,8 +203,15 @@ def gen_minaut(alphabet: str, pos: list[str], neg: list[str]) -> DFA:
 
 # Q4
 def gen_autc(alphabet: str, pos: list[str], neg: list[str], k: int) -> DFA:
-    # TODO
-    return None
+    constraints = [
+        _source_state_is_in_aut,
+        _at_least_one_ac_state,
+        _ac_states_are_in_aut,
+        _transitions_are_valid,
+        _aut_is_consistent,
+        _aut_is_complete,
+    ]
+    return _gen_aut(constraints, alphabet, pos, neg, k)
 
 # Q5
 def gen_autr(alphabet: str, pos: list[str], neg: list[str], k: int) -> DFA:
@@ -236,10 +232,10 @@ def gen_autn(alphabet: str, pos: list[str], neg: list[str], k: int) -> NFA:
 
 
 def main():
-    #gen_aut('a',  ['', 'aa', 'aaaaaa'], ['a', 'aaa', 'aaaaa'], 2)
+    gen_aut('a',  ['', 'aa', 'aaaaaa'], ['a', 'aaa', 'aaaaa'], 2)
     #gen_aut("ab", ["", "a", "aa", "aaa", "aaaa"], ["b", "ab", "ba", "bab", "aba"], 1)
     #gen_aut("ab", ["b", "ab", "ba", "abba", "abbb"], ["", "a", "aa", "aaa"], 2)
-    test_aut()
+    #test_aut()
     #test_minaut()
     #test_autc()
     #test_autr()
