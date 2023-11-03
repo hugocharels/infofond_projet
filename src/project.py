@@ -19,6 +19,9 @@ A_ID = 1 # si l'état est accpetant
 T_ID = 2 # les transitions
 V_ID = 3 # les états visiter lors de l'éxécution
 
+# transformation de tseitin
+X_ID = 4
+
 
 def p_id(n: int) -> int:
     """ Est vrai si l'état n est présent dans l'automate """
@@ -36,6 +39,10 @@ def v_id(n: int, i: int, w: int) -> int:
     """ Est vrai si l'état n à été visité pour la ième lettre du mot w """
     return vpool.id((V_ID, n, i, w))
 
+def x_id(i: int, j: int, x: int, w: str):
+    """  """
+    return vpool.id((X_ID, i, j, x, w))
+
 def reverse(v: int) -> tuple:
     """ Retourne la variable sous forme de tuple """
     tup = vpool.obj(v) if vpool.obj(v) is not None else vpool.obj(-v)
@@ -44,6 +51,7 @@ def reverse(v: int) -> tuple:
     elif tup[0] == A_ID: ret += f"a[{tup[1]}]"
     elif tup[0] == T_ID: ret += f"t[{tup[1]},{tup[2]},{tup[3]}]"
     elif tup[0] == V_ID: ret += f"v[{tup[1]},{tup[2]},{tup[3]}]"
+    elif tup[0] == X_ID: ret += f"x[{tup[1]},{tup[2]},{tup[3]},{tup[4]}]"
     return ret
 
 
@@ -70,6 +78,7 @@ def _construction(**args):
         for j in range(args["k"]):
             for l in args["alphabet"]:
                 yield [-t_id(i,j,l), p_id(i)]
+                if i == j: continue
                 yield [-t_id(i,j,l), p_id(j)]
 
 def _aut_is_consistent(**args):
@@ -98,16 +107,16 @@ def _aut_is_consistent(**args):
     print("------ VISITES -------")
     # Un seul état peut être visité en même temps
     for w in args["pos"] + args["neg"]:
-        for x in range(len(w)):
+        for x in range(1, len(w)+1):
             for i in range(args["k"]):
                 for j in range(args["k"]):
-                    if i==j : continue
+                    if i >= j: continue
                     yield [-v_id(i, x, w), -v_id(j, x, w)]
     
     print("------ EXISTENCE -------")
     # Chaque mot doit avoir une exécution
     for w in args["pos"] + args["neg"]:
-        for x in range(1, len(w)):
+        for x in range(1, len(w)+1):
             yield [v_id(i, x, w) for i in range(args["k"])]
     
     print("------ TRANSITIONS -------")
@@ -115,9 +124,17 @@ def _aut_is_consistent(**args):
     for w in args["pos"] + args["neg"]:
         for x in range(len(w)-1):
             for i in range(args["k"]):
+                yield [-v_id(i, x, w)] + [x_id(i, j, x, w) for j in range(args["k"])]
                 for j in range(args["k"]):
-                    yield [-v_id(i, x, w), -t_id(i, j, w[x]), v_id(j, x+1, w)]
-                    yield [-v_id(i, x, w), -v_id(j, x+1, w), t_id(i,j,w[x])]
+                    yield [-x_id(i, j, x, w), v_id(j, x+1, w)]
+                    yield [-x_id(i, j, x, w), t_id(i, j, w[x])]
+                    yield [-v_id(j, x+1, w), -t_id(i, j, w[x]), x_id(i, j, x, w)]
+
+def _aut_is_min(**args):
+    """ Minimise le nombre d'état. """
+    # Je crois, j'espère, je pense pas
+    for i in range(1, k):
+        yield [p_id(0)] + [-p_id(j) for j in range(1, i)]
 
 def _aut_is_complete(**args):
     """ L'automate est complet. """
@@ -172,9 +189,9 @@ def _get_transitions_from_model(model: list[int], alphabet: str, k: int) -> dict
 def _gen_cnf(constraints: list, alphabet: str, pos: list[str], neg: list[str], k: int) -> CNF:
     """ Génère une CNF à partir d'une liste de contraintes"""
     cnf = CNF()
-    for c in constraints:
-        for clause in c(alphabet=alphabet, pos=pos, neg=neg, k=k):
-            print([reverse(prop) for prop in clause])
+    for constraint in constraints:
+        for clause in constraint(alphabet=alphabet, pos=pos, neg=neg, k=k):
+            #([reverse(prop) for prop in clause])
             cnf.append(clause)
     return cnf
 
@@ -212,14 +229,17 @@ def gen_aut(alphabet: str, pos: list[str], neg: list[str], k: int) -> DFA:
     constraints = [
         _construction,
         _aut_is_consistent,
-        #_aut_is_complete,
     ]
     return _gen_aut(constraints, alphabet, pos, neg, k)
 
 # Q3
 def gen_minaut(alphabet: str, pos: list[str], neg: list[str]) -> DFA:
-    # TODO
-    return None
+    constraints = [
+        _construction,
+        _aut_is_consistent,
+        _aut_is_min,
+    ]
+    return _gen_aut(constraints, alphabet, pos, neg, k)
 
 # Q4
 def gen_autc(alphabet: str, pos: list[str], neg: list[str], k: int) -> DFA:
@@ -249,10 +269,10 @@ def gen_autn(alphabet: str, pos: list[str], neg: list[str], k: int) -> NFA:
 
 
 def main():
-    gen_aut('a',  ['', 'aa', 'aaaaaa'], ['a', 'aaa', 'aaaaa'], 2)
+    #gen_aut('a',  ['', 'aa', 'aaaaaa'], ['a', 'aaa', 'aaaaa'], 2)
     #gen_aut("ab", ["", "a", "aa", "aaa", "aaaa"], ["b", "ab", "ba", "bab", "aba"], 1)
     #gen_aut("ab", ["b", "ab", "ba", "abba", "abbb"], ["", "a", "aa", "aaa"], 2)
-    #test_aut()
+    test_aut()
     #test_minaut()
     #test_autc()
     #test_autr()
