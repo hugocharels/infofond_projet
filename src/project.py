@@ -62,8 +62,8 @@ def reverse(v: int) -> tuple:
 
 def _construction(**args):
     """ L'automate est construit de manière correcte. """
-    print("-----------------------------------------")
-    print("----------------- BUILD -----------------")
+    #print("-----------------------------------------")
+    #print("----------------- BUILD -----------------")
     # La source est présente dans l'automate
     yield [p_id(0)]
 
@@ -84,66 +84,71 @@ def _construction(**args):
 def _aut_is_consistent(**args):
     """ L'automate est consistant."""
 
-    print("-----------------------------------------")
-    print("--------------- CONSISTANT ---------------")
+    #print("-----------------------------------------")
+    #print("--------------- CONSISTANT ---------------")
     
-    print("------- SOURCE -------")
+    #print("------- SOURCE -------")
     # Toutes les exécutions commencent à la source
     for w in args["pos"] + args["neg"]:
         yield [v_id(0, 0, w)]
+        #if len(w) == 0: yield [v_id(0, 0, w)]
+        #else: yield [-t_id(0, n, w[0]) for n in range(args["k"])] + [v_id(n, 0, w) for n in range(args["k"])]
 
-    print("----- ACCEPTANTES ------")
+    #print("----- ACCEPTANTES ------")
     # Toutes les exécutions des mots de P sont acceptantes
     for w in args["pos"]:
         for n in range(args["k"]):
             yield [-v_id(n, len(w), w), a_id(n)]
+            #yield [-a_id(n), v_id(n, len(w), w)]
 
-    print("--- NON ACCEPTANTES ----")
+    #print("--- NON ACCEPTANTES ----")
     # Toutes les exécutions des mots de N sont non acceptantes
     for w in args["neg"]:
         for n in range(args["k"]):
             yield [-v_id(n, len(w), w), -a_id(n)]
+            #yield [a_id(n), v_id(n, len(w), w)]
 
-    print("------ VISITES -------")
+    #print("------ VISITES -------")
     # Un seul état peut être visité en même temps
     for w in args["pos"] + args["neg"]:
-        for x in range(1, len(w)+1):
+        for x in range(len(w)+1):
             for i in range(args["k"]):
                 for j in range(args["k"]):
                     if i >= j: continue
                     yield [-v_id(i, x, w), -v_id(j, x, w)]
     
-    print("------ EXISTENCE -------")
+    #print("------ EXISTENCE -------")
     # Chaque mot doit avoir une exécution
     for w in args["pos"] + args["neg"]:
         for x in range(1, len(w)+1):
             yield [v_id(i, x, w) for i in range(args["k"])]
     
-    print("------ TRANSITIONS -------")
+    #print("------ TRANSITIONS -------")
     # Toutes les exécutions suivent les transitions
     for w in args["pos"] + args["neg"]:
-        for x in range(len(w)-1):
+        for x in range(len(w)):
             for i in range(args["k"]):
-                yield [-v_id(i, x, w)] + [x_id(i, j, x, w) for j in range(args["k"])]
+                #yield [-v_id(i, x, w)] + [x_id(i, j, x, w) for j in range(args["k"])]
                 for j in range(args["k"]):
-                    yield [-x_id(i, j, x, w), v_id(j, x+1, w)]
-                    yield [-x_id(i, j, x, w), t_id(i, j, w[x])]
-                    yield [-v_id(j, x+1, w), -t_id(i, j, w[x]), x_id(i, j, x, w)]
-
-def _aut_is_min(**args):
-    """ Minimise le nombre d'état. """
-    # Je crois, j'espère, je pense pas
-    for i in range(1, k):
-        yield [p_id(0)] + [-p_id(j) for j in range(1, i)]
+                    #yield [-x_id(i, j, x, w), v_id(j, x+1, w)]
+                    #yield [-x_id(i, j, x, w), t_id(i, j, w[x])]
+                    #yield [-v_id(j, x+1, w), -t_id(i, j, w[x]), x_id(i, j, x, w)]
+                    yield [-v_id(i, x, w), -t_id(i, j, w[x]), v_id(j, x+1, w)]
+                    yield [-v_id(i, x, w), -v_id(j, x+1, w), t_id(i,j,w[x])]
 
 def _aut_is_complete(**args):
     """ L'automate est complet. """
+
+    #print("-----------------------------------------")
+    #print("--------------- COMPLETE ---------------")
     
+    #print("----- 2 SORTANTES ------")
     # Pour chaque état il y a une transition sortante pour chaque lettre de l'alphabet
     for i in range(args["k"]):
         for l in args["alphabet"]:
             yield [t_id(i, j, l) for j in range(args["k"])]
 
+    #print("----- 1 ENTRANTE ------")
     # Pour chaque état il y a une transition entrante pour au moins une lettre de l'alphabet
     for i in range(args["k"]):
         yield [t_id(j, i, l) for j in range(args["k"]) for l in args["alphabet"]]
@@ -191,7 +196,7 @@ def _gen_cnf(constraints: list, alphabet: str, pos: list[str], neg: list[str], k
     cnf = CNF()
     for constraint in constraints:
         for clause in constraint(alphabet=alphabet, pos=pos, neg=neg, k=k):
-            #([reverse(prop) for prop in clause])
+            #print([reverse(prop) for prop in clause])
             cnf.append(clause)
     return cnf
 
@@ -215,12 +220,13 @@ def _print_model(model: list[int], alphabet: str, k: int) -> None:
 
 def _gen_aut(constraints : list, alphabet: str, pos: list[str], neg: list[str], k: int) -> DFA:
     """ Génère un automate à partir d'une liste de contraintes"""
-    print("-----------------------------------------")
-    print(f"E={set(alphabet)}, P={pos}, N={neg}, k={k}")
+    #print("-----------------------------------------")
+    #print(f"E={set(alphabet)}, P={pos}, N={neg}, k={k}")
     cnf = _gen_cnf(constraints, alphabet, pos, neg, k)
     result, model = _solve(cnf)
     if result:
-        _print_model(model, alphabet, k)
+        pass
+        #_print_model(model, alphabet, k)
         #show_automaton(_from_model_to_dfa(model, alphabet, k))
     return _from_model_to_dfa(model, alphabet, k) if result else None
 
@@ -229,6 +235,7 @@ def gen_aut(alphabet: str, pos: list[str], neg: list[str], k: int) -> DFA:
     constraints = [
         _construction,
         _aut_is_consistent,
+        #_aut_is_complete,
     ]
     return _gen_aut(constraints, alphabet, pos, neg, k)
 
@@ -237,9 +244,15 @@ def gen_minaut(alphabet: str, pos: list[str], neg: list[str]) -> DFA:
     constraints = [
         _construction,
         _aut_is_consistent,
-        _aut_is_min,
+        #_aut_is_complete,
     ]
-    return _gen_aut(constraints, alphabet, pos, neg, k)
+
+    k = 0
+    aut = None
+    while aut is None:
+        k += 1
+        aut = _gen_aut(constraints, alphabet, pos, neg, k)
+    return aut
 
 # Q4
 def gen_autc(alphabet: str, pos: list[str], neg: list[str], k: int) -> DFA:
@@ -274,6 +287,7 @@ def main():
     #gen_aut("ab", ["b", "ab", "ba", "abba", "abbb"], ["", "a", "aa", "aaa"], 2)
     test_aut()
     #test_minaut()
+    #gen_autc('ab', ['', 'aa', 'aaaa', 'a', 'abb', 'bb', 'abba', 'bbbb', 'bbba', 'abbb'], ['b', 'aba', 'ba', 'ab', 'abbab', 'bbabbab', 'babba'], 4)
     #test_autc()
     #test_autr()
     #test_autcard()
