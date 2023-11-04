@@ -151,7 +151,8 @@ def _aut_is_complete(**args):
     #print("----- 1 ENTRANTE ------")
     # Pour chaque état il y a une transition entrante pour au moins une lettre de l'alphabet
     for i in range(args["k"]):
-        yield [t_id(j, i, l) for j in range(args["k"]) for l in args["alphabet"]]
+        pass
+        #yield [t_id(j, i, l) for j in range(args["k"]) for l in args["alphabet"]]
 
 
 #####################################################
@@ -167,6 +168,7 @@ def _from_model_to_dfa(model: list[int], alphabet: str, k: int) -> DFA:
         transitions=_get_transitions_from_model(model, alphabet, k),
         initial_state="q0",
         final_states=_get_final_states_from_model(model, k),
+        allow_partial=True
     )
 
 def _get_states_from_model(model: list[int], k: int) -> set[int]:
@@ -220,13 +222,13 @@ def _print_model(model: list[int], alphabet: str, k: int) -> None:
 
 def _gen_aut(constraints : list, alphabet: str, pos: list[str], neg: list[str], k: int) -> DFA:
     """ Génère un automate à partir d'une liste de contraintes"""
-    #print("-----------------------------------------")
-    #print(f"E={set(alphabet)}, P={pos}, N={neg}, k={k}")
+    print("-----------------------------------------")
+    print(f"E={set(alphabet)}, P={pos}, N={neg}, k={k}")
     cnf = _gen_cnf(constraints, alphabet, pos, neg, k)
     result, model = _solve(cnf)
     if result:
         pass
-        #_print_model(model, alphabet, k)
+        _print_model(model, alphabet, k)
         #show_automaton(_from_model_to_dfa(model, alphabet, k))
     return _from_model_to_dfa(model, alphabet, k) if result else None
 
@@ -286,9 +288,9 @@ def main():
     #gen_aut("ab", ["", "a", "aa", "aaa", "aaaa"], ["b", "ab", "ba", "bab", "aba"], 1)
     #gen_aut("ab", ["b", "ab", "ba", "abba", "abbb"], ["", "a", "aa", "aaa"], 2)
     test_aut()
-    #test_minaut()
+    test_minaut()
     #gen_autc('ab', ['', 'aa', 'aaaa', 'a', 'abb', 'bb', 'abba', 'bbbb', 'bbba', 'abbb'], ['b', 'aba', 'ba', 'ab', 'abbab', 'bbabbab', 'babba'], 4)
-    #test_autc()
+    test_autc()
     #test_autr()
     #test_autcard()
     #test_autn()
