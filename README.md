@@ -29,10 +29,14 @@
 		$\bigwedge\limits_{w\in P \cup N} v_{0,0, w}$
 
 	2. Toutes les exécutions des mots de $P$ sont acceptantes.  
-		$\bigwedge\limits_{w \in P}\bigwedge\limits_{n=0}^{k} v_{n, L(w), w} \rightarrow a_{n} \quad$ mise en FNC $\quad \bigwedge\limits_{w \in P}\bigwedge\limits_{n=0}^{k} \lnot v_{n, L(w), w} \lor a_{n}$
+		$\bigwedge\limits_{w \in P}\bigwedge\limits_{n=0}^{k} v_{n, L(w), w} \rightarrow a_{n}$ 
+		
+		$\bigwedge\limits_{w \in P}\bigwedge\limits_{n=0}^{k} \lnot v_{n, L(w), w} \lor a_{n}$
 
 	3. Toutes les exécutions des mots de $P$ sont acceptantes.  
-		$\bigwedge\limits_{w \in N}\bigwedge\limits_{n=0}^{k} v_{n, L(w), w} \rightarrow \lnot a_{n} \quad$ mise en FNC $\quad \bigwedge\limits_{w \in N}\bigwedge\limits_{n=0}^{k} \lnot v_{n, L(w), w} \lor \lnot a_{n}$
+		$\bigwedge\limits_{w \in N}\bigwedge\limits_{n=0}^{k} v_{n, L(w), w} \rightarrow \lnot a_{n}$
+		
+		$\bigwedge\limits_{w \in N}\bigwedge\limits_{n=0}^{k} \lnot v_{n, L(w), w} \lor \lnot a_{n}$
 
 	4.  Un état ne peux être visité qu'une seule fois en même temps.  
 		$\bigwedge\limits_{w\in P \cup N} \bigwedge\limits_{x=0}^{L(w)}\bigwedge\limits_{i=0}^{k} v_{i,x,w} \rightarrow \lnot \bigvee\limits_{j=0, i\neq j}^{k} v_{j,x,w}$
@@ -44,7 +48,7 @@
 	5.  Il doit existé au moins une exécution pour chaque mot.  
 		$\bigwedge\limits_{w\in P \cup N} \bigwedge\limits_{x=0}^{L(w)}\bigvee\limits_{i=0}^{k} v_{i,x,w}$
 	
-	6. Un état ne peut être visité uniquement en partant d'un état et en utilisant une transition.
+	6. Un état ne peut être visité uniquement en partant d'un état et en utilisant une transition.  
 		$\bigwedge\limits_{w\in P \cup N} \bigwedge\limits_{x=0}^{L(w)-1}\bigwedge\limits_{i=0}^{k} v_{i,x,w} \rightarrow \bigwedge\limits_{j=0}^{k} v_{j,x+1,w} \leftrightarrow t_{i,j,w[x]}$
 		
 		$\bigwedge\limits_{w\in P \cup N} \bigwedge\limits_{x=0}^{L(w)-1}\bigwedge\limits_{i=0}^{k} \lnot v_{i,x,w} \lor\bigwedge\limits_{j=0}^{k} (v_{j,x+1,w} \rightarrow t_{i,j,w[x]}) \land (\lnot t_{i,j,w[x]} \rightarrow v_{j,x+1,w})$
@@ -52,4 +56,8 @@
 		$\bigwedge\limits_{w\in P \cup N} \bigwedge\limits_{x=0}^{L(w)-1}\bigwedge\limits_{i=0}^{k} \lnot v_{i,x,w} \lor \bigwedge\limits_{j=0}^{k} (\lnot v_{j,x+1,w} \lor t_{i,j,w[x]}) \land (\lnot t_{i,j,w[x]} \lor v_{j,x+1,w})$
 	
 		$\bigwedge\limits_{w\in P \cup N} \bigwedge\limits_{x=0}^{L(w)-1}\bigwedge\limits_{i=0}^{k} \bigwedge\limits_{j=0}^{k} (\lnot v_{i,x,w} \lor \lnot v_{j,x+1,w} \lor t_{i,j,w[x]}) \land (\lnot v_{i,x,w} \lor \lnot t_{i,j,w[x]} \lor v_{j,x+1,w})$
+		
+6. L'automate est complet.  
+		Pour chaque état il dois existé une transition sortante pour chaque lettre de l'alphabet.  
+		$\bigwedge\limits_{l\in \Sigma}\bigwedge\limits_{i=0}^{k}\bigvee\limits_{j=0}^{k} t_{i,j,l}$
 		
