@@ -7,7 +7,7 @@ from automata.fa.nfa import NFA
 
 from pysat.solvers import Minisat22, Minicard
 from pysat.formula import CNF, CNFPlus, IDPool
-
+from pysat.card import CardEnc
 
 
 #################### VARIABLES ####################
@@ -226,17 +226,19 @@ cnfplus = lambda **args: "cnfplus" in args and args["cnfplus"]
 
 def _gen_cnf(constraints: list, alphabet: str, pos: list[str], neg: list[str], k: int, **args) -> CNF:
     """ Génère une CNF à partir d'une liste de contraintes"""
-    cnf = CNF()
+    cnf = CNF() if not cnfplus(**args) else CNFPlus()
     for constraint in constraints:
         for clause in constraint(alphabet=alphabet, pos=pos, neg=neg, k=k, **args):
             #print([reverse(prop) for prop in clause])
             cnf.append(clause)
+    if cnfplus(**args) and "ell" in args:
+        cnf.append([[a_id(i) for i in range(k)], args["ell"]], is_atmost=True)
     return cnf
 
 def _solve(cnf: CNF) -> (bool, list[int]):
     """ Résoud une CNF"""
-    solver = Minisat22(use_timer=True)
-    #solver = Minicard(use_timer=True)
+    if isinstance(cnf, CNFPlus): solver = Minicard(use_timer=True)
+    else: solver = Minisat22(use_timer=True)
     solver.append_formula(cnf)
     return solver.solve(), solver.get_model()
 
@@ -248,9 +250,12 @@ def _print_model(model: list[int], alphabet: str, k: int) -> None:
 
 def _gen_aut(constraints : list, alphabet: str, pos: list[str], neg: list[str], k: int, **args) -> DFA:
     """ Génère un automate à partir d'une liste de contraintes"""
+    constraints = [
+        _construction,
+        _aut_is_consistent,
+    ] + constraints
     if verbose(**args): print(f"-----------------------------------------\nE={set(alphabet)}, P={pos}, N={neg}, k={k}")
-    if cnfplus(**args): cnf = __gen_cnfplus(constraints, alphabet, pos, neg, k, **args)
-    else: cnf = cnf = _gen_cnf(constraints, alphabet, pos, neg, k, **args)
+    cnf = _gen_cnf(constraints, alphabet, pos, neg, k, **args)
     result, model = _solve(cnf)
     if result and verbose(**args): _print_model(model, alphabet, k)
     #show_automaton(_from_model_to_dfa(model, alphabet, k))
@@ -262,11 +267,7 @@ def _gen_aut(constraints : list, alphabet: str, pos: list[str], neg: list[str], 
 
 # Q2
 def gen_aut(alphabet: str, pos: list[str], neg: list[str], k: int) -> DFA:
-    constraints = [
-        _construction,
-        _aut_is_consistent,
-    ]
-    return _gen_aut(constraints, alphabet, pos, neg, k)
+    return _gen_aut([], alphabet, pos, neg, k)
 
 # Q3
 def gen_minaut(alphabet: str, pos: list[str], neg: list[str], k: int=1) -> DFA:
@@ -275,26 +276,15 @@ def gen_minaut(alphabet: str, pos: list[str], neg: list[str], k: int=1) -> DFA:
 
 # Q4
 def gen_autc(alphabet: str, pos: list[str], neg: list[str], k: int) -> DFA:
-    constraints = [
-        _construction,
-        _aut_is_consistent,
-        _aut_is_complete,
-    ]
-    return _gen_aut(constraints, alphabet, pos, neg, k)
+    return _gen_aut([_aut_is_complete], alphabet, pos, neg, k)
 
 # Q5
 def gen_autr(alphabet: str, pos: list[str], neg: list[str], k: int) -> DFA:
-    constraints = [
-        _construction,
-        _aut_is_consistent,
-        _aut_is_reverse,
-    ]
-    return _gen_aut(constraints, alphabet, pos, neg, k)
+    return _gen_aut([_aut_is_reverse], alphabet, pos, neg, k)
 
 # Q6
 def gen_autcard(alphabet: str, pos: list[str], neg: list[str], k: int, ell: int) -> DFA:
-    # TODO
-    return None
+    return _gen_aut([], alphabet, pos, neg, k, cnfplus=True, ell=ell)
 
 # Q7
 def gen_autn(alphabet: str, pos: list[str], neg: list[str], k: int) -> NFA:
@@ -308,7 +298,7 @@ def main():
     test_minaut()
     test_autc()
     test_autr()
-    #test_autcard()
+    test_autcard()
     #test_autn()
 
 if __name__ == '__main__':
