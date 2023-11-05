@@ -60,12 +60,15 @@ def reverse(v: int) -> tuple:
 
 #################### CONSTRAINTS ####################
 
+def __source_in_aut():
+    """ La source est présente dans l'automate """
+    return [p_id(0)]
+
+
 def _construction(**args):
     """ L'automate est construit de manière correcte. """
-    #print("-----------------------------------------")
-    #print("----------------- BUILD -----------------")
-    # La source est présente dans l'automate
-    yield [p_id(0)]
+    
+    yield __source_in_aut()
 
     # Il y a au moins un état acceptant dans l'automate
     yield [a_id(n) for n in range(args["k"])]
@@ -237,7 +240,6 @@ def gen_aut(alphabet: str, pos: list[str], neg: list[str], k: int) -> DFA:
     constraints = [
         _construction,
         _aut_is_consistent,
-        #_aut_is_complete,
     ]
     return _gen_aut(constraints, alphabet, pos, neg, k)
 
@@ -246,7 +248,6 @@ def gen_minaut(alphabet: str, pos: list[str], neg: list[str]) -> DFA:
     constraints = [
         _construction,
         _aut_is_consistent,
-        #_aut_is_complete,
     ]
 
     k = 1
