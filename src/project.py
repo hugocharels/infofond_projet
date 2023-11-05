@@ -127,7 +127,7 @@ def _aut_is_consistent(**args):
 
 
 def __all_neg_exec_exists(**args):
-    """ Il existe une exécution pour chaque mot de P """
+    """ Il existe une exécution pour chaque mot de N """
     for w in args["neg"]:
         yield [v_id(i, len(w), w) for i in range(args["k"])]
 
