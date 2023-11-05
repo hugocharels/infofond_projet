@@ -73,7 +73,7 @@ def _construction(**args):
     """ L'automate est construit de manière correcte. """
     constraints = [
         __source_in_aut,
-        __min_one_accepting_state,
+        #__min_one_accepting_state,
         __states_are_in_aut,
         __transitions_are_valids,
     ]
@@ -165,8 +165,26 @@ def _aut_is_complete(**args):
         for clause in constraint(**args):
             yield clause
 
-#####################################################
 
+def __all_exec_follow_reverse_transitions(**args):
+    """ Toutes les exécutions suivent les transitions """
+    for w in args["pos"] + args["neg"]:
+        for x in range(len(w)):
+            for i in range(args["k"]):
+                for j in range(args["k"]):
+                    yield [-v_id(i, x, w), -t_id(j, i, w[x]), v_id(j, x+1, w)]
+                    yield [-v_id(i, x, w), -v_id(j, x+1, w), t_id(j, i, w[x])]
+
+def _aut_is_reverse(**args):
+    """ L'automate est réversible. """
+    constraints = [
+        __all_exec_follow_reverse_transitions,
+    ]
+    for constraint in constraints:
+        for clause in constraint(**args):
+            yield clause
+
+#####################################################
 
 #################### MODEL -> DFA ####################
 
@@ -203,11 +221,14 @@ def _get_transitions_from_model(model: list[int], alphabet: str, k: int) -> dict
 
 #################### UTILS ####################
 
-def _gen_cnf(constraints: list, alphabet: str, pos: list[str], neg: list[str], k: int) -> CNF:
+verbose = lambda **args: "verbose" in args and args["verbose"]
+cnfplus = lambda **args: "cnfplus" in args and args["cnfplus"]
+
+def _gen_cnf(constraints: list, alphabet: str, pos: list[str], neg: list[str], k: int, **args) -> CNF:
     """ Génère une CNF à partir d'une liste de contraintes"""
     cnf = CNF()
     for constraint in constraints:
-        for clause in constraint(alphabet=alphabet, pos=pos, neg=neg, k=k):
+        for clause in constraint(alphabet=alphabet, pos=pos, neg=neg, k=k, **args):
             #print([reverse(prop) for prop in clause])
             cnf.append(clause)
     return cnf
@@ -225,22 +246,19 @@ def _print_model(model: list[int], alphabet: str, k: int) -> None:
     print(f"final_states={_get_final_states_from_model(model, k)}")
     print(f"transitions={_get_transitions_from_model(model, alphabet, k)}")
 
+def _gen_aut(constraints : list, alphabet: str, pos: list[str], neg: list[str], k: int, **args) -> DFA:
+    """ Génère un automate à partir d'une liste de contraintes"""
+    if verbose(**args): print(f"-----------------------------------------\nE={set(alphabet)}, P={pos}, N={neg}, k={k}")
+    if cnfplus(**args): cnf = __gen_cnfplus(constraints, alphabet, pos, neg, k, **args)
+    else: cnf = cnf = _gen_cnf(constraints, alphabet, pos, neg, k, **args)
+    result, model = _solve(cnf)
+    if result and verbose(**args): _print_model(model, alphabet, k)
+    #show_automaton(_from_model_to_dfa(model, alphabet, k))
+    return _from_model_to_dfa(model, alphabet, k) if result else None
 
 ###############################################
 
 #################### QUESTIONS ####################
-
-def _gen_aut(constraints : list, alphabet: str, pos: list[str], neg: list[str], k: int) -> DFA:
-    """ Génère un automate à partir d'une liste de contraintes"""
-    #print("-----------------------------------------")
-    #print(f"E={set(alphabet)}, P={pos}, N={neg}, k={k}")
-    cnf = _gen_cnf(constraints, alphabet, pos, neg, k)
-    result, model = _solve(cnf)
-    if result:
-        pass
-        #_print_model(model, alphabet, k)
-        #show_automaton(_from_model_to_dfa(model, alphabet, k))
-    return _from_model_to_dfa(model, alphabet, k) if result else None
 
 # Q2
 def gen_aut(alphabet: str, pos: list[str], neg: list[str], k: int) -> DFA:
@@ -251,18 +269,9 @@ def gen_aut(alphabet: str, pos: list[str], neg: list[str], k: int) -> DFA:
     return _gen_aut(constraints, alphabet, pos, neg, k)
 
 # Q3
-def gen_minaut(alphabet: str, pos: list[str], neg: list[str]) -> DFA:
-    constraints = [
-        _construction,
-        _aut_is_consistent,
-    ]
-
-    k = 1
-    aut = None
-    while aut is None:
-        aut = _gen_aut(constraints, alphabet, pos, neg, k)
-        k += 1
-    return aut
+def gen_minaut(alphabet: str, pos: list[str], neg: list[str], k: int=1) -> DFA:
+    aut = gen_aut(alphabet, pos, neg, k)
+    return aut if aut is not None else gen_minaut(alphabet, pos, neg, k+1)
 
 # Q4
 def gen_autc(alphabet: str, pos: list[str], neg: list[str], k: int) -> DFA:
@@ -275,8 +284,12 @@ def gen_autc(alphabet: str, pos: list[str], neg: list[str], k: int) -> DFA:
 
 # Q5
 def gen_autr(alphabet: str, pos: list[str], neg: list[str], k: int) -> DFA:
-    # TODO
-    return None
+    constraints = [
+        _construction,
+        _aut_is_consistent,
+        _aut_is_reverse,
+    ]
+    return _gen_aut(constraints, alphabet, pos, neg, k)
 
 # Q6
 def gen_autcard(alphabet: str, pos: list[str], neg: list[str], k: int, ell: int) -> DFA:
@@ -290,16 +303,11 @@ def gen_autn(alphabet: str, pos: list[str], neg: list[str], k: int) -> NFA:
 
 ######################################################
 
-
 def main():
-    #gen_aut('a',  ['', 'aa', 'aaaaaa'], ['a', 'aaa', 'aaaaa'], 2)
-    #gen_aut("ab", ["", "a", "aa", "aaa", "aaaa"], ["b", "ab", "ba", "bab", "aba"], 1)
-    #gen_aut("ab", ["b", "ab", "ba", "abba", "abbb"], ["", "a", "aa", "aaa"], 2)
     test_aut()
     test_minaut()
-    #gen_autc('ab', ['', 'aa', 'aaaa', 'a', 'abb', 'bb', 'abba', 'bbbb', 'bbba', 'abbb'], ['b', 'aba', 'ba', 'ab', 'abbab', 'bbabbab', 'babba'], 4)
     test_autc()
-    #test_autr()
+    test_autr()
     #test_autcard()
     #test_autn()
 
