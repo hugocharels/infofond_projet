@@ -31,18 +31,6 @@ t_id = lambda i, j, l: vpool.id((T_ID, i, j, l))
 # Est vrai si l'état n à été visité pour la ième lettre du mot w
 v_id = lambda n, i, w: vpool.id((V_ID, n, i, w))
 
-
-def reverse(v: int) -> tuple:
-    """ Retourne la variable sous forme de tuple """
-    tup = vpool.obj(v) if vpool.obj(v) is not None else vpool.obj(-v)
-    ret = "" if v > 0 else "-"
-    if tup[0] == P_ID: ret += f"p[{tup[1]}]"
-    elif tup[0] == A_ID: ret += f"a[{tup[1]}]"
-    elif tup[0] == T_ID: ret += f"t[{tup[1]},{tup[2]},{tup[3]}]"
-    elif tup[0] == V_ID: ret += f"v[{tup[1]},{tup[2]},{tup[3]}]"
-    #elif tup[0] == X_ID: ret += f"x[{tup[1]},{tup[2]},{tup[3]},{tup[4]}]"
-    return ret
-
 #####################################################
 
 
@@ -120,8 +108,8 @@ def __all_exec_follow_transitions(**args):
         for x in range(len(w)):
             for i in range(args["k"]):
                 for j in range(args["k"]):
-                    yield [-v_id(i, x, w), -t_id(i, j, w[x]), v_id(j, x+1, w)]
-                    yield [-v_id(i, x, w), -v_id(j, x+1, w), t_id(i,j,w[x])]
+                    yield [-v_id(i, x, w), -t_id(i, j, w[x]), v_id(j, x+1, w)] if not reverse_visit(**args) else [-v_id(j, x, w), -t_id(j, i, w[x]), v_id(i, x+1, w)]
+                    yield [-v_id(i, x, w), -v_id(j, x+1, w), t_id(i, j, w[x])] if not reverse_visit(**args) else [-v_id(j, x, w), -v_id(i, x+1, w), t_id(j, i, w[x])]
 
 def _aut_is_consistent(**args):
     """ L'automate est consistant."""
@@ -166,23 +154,9 @@ def _aut_is_complete(**args):
             yield clause
 
 
-def __all_exec_follow_reverse_transitions(**args):
-    """ Toutes les exécutions suivent les transitions """
-    for w in args["pos"] + args["neg"]:
-        for x in range(len(w)):
-            for i in range(args["k"]):
-                for j in range(args["k"]):
-                    yield [-v_id(i, x, w), -t_id(j, i, w[x]), v_id(j, x+1, w)]
-                    yield [-v_id(i, x, w), -v_id(j, x+1, w), t_id(j, i, w[x])]
-
 def _aut_is_reverse(**args):
     """ L'automate est réversible. """
-    constraints = [
-        __all_exec_follow_reverse_transitions,
-    ]
-    for constraint in constraints:
-        for clause in constraint(**args):
-            yield clause
+    return _aut_is_consistent(**args, reverse=True)
 
 #####################################################
 
@@ -223,6 +197,7 @@ def _get_transitions_from_model(model: list[int], alphabet: str, k: int) -> dict
 
 verbose = lambda **args: "verbose" in args and args["verbose"]
 cnfplus = lambda **args: "cnfplus" in args and args["cnfplus"]
+reverse_visit = lambda **args: "reverse" in args and args["reverse"]
 
 def _gen_cnf(constraints: list, alphabet: str, pos: list[str], neg: list[str], k: int, **args) -> CNF:
     """ Génère une CNF à partir d'une liste de contraintes"""
@@ -247,6 +222,17 @@ def _print_model(model: list[int], alphabet: str, k: int) -> None:
     print(f"states={_get_states_from_model(model, k)}")
     print(f"final_states={_get_final_states_from_model(model, k)}")
     print(f"transitions={_get_transitions_from_model(model, alphabet, k)}")
+
+def reverse(v: int) -> tuple:
+    """ Retourne la variable sous forme de tuple """
+    tup = vpool.obj(v) if vpool.obj(v) is not None else vpool.obj(-v)
+    ret = "" if v > 0 else "-"
+    if tup[0] == P_ID: ret += f"p[{tup[1]}]"
+    elif tup[0] == A_ID: ret += f"a[{tup[1]}]"
+    elif tup[0] == T_ID: ret += f"t[{tup[1]},{tup[2]},{tup[3]}]"
+    elif tup[0] == V_ID: ret += f"v[{tup[1]},{tup[2]},{tup[3]}]"
+    elif tup[0] == RV_ID: ret += f"rv[{tup[1]},{tup[2]},{tup[3]}]"
+    return ret
 
 def _gen_aut(constraints : list, alphabet: str, pos: list[str], neg: list[str], k: int, **args) -> DFA:
     """ Génère un automate à partir d'une liste de contraintes"""
