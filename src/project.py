@@ -119,7 +119,7 @@ def _aut_is_consistent(**args):
     
     #print("------ EXISTENCE -------")
     # Chaque mot doit avoir une exécution
-    for w in args["pos"] + args["neg"]:
+    for w in args["pos"]:
         for x in range(1, len(w)+1):
             yield [v_id(i, x, w) for i in range(args["k"])]
     
@@ -222,13 +222,13 @@ def _print_model(model: list[int], alphabet: str, k: int) -> None:
 
 def _gen_aut(constraints : list, alphabet: str, pos: list[str], neg: list[str], k: int) -> DFA:
     """ Génère un automate à partir d'une liste de contraintes"""
-    print("-----------------------------------------")
-    print(f"E={set(alphabet)}, P={pos}, N={neg}, k={k}")
+    #print("-----------------------------------------")
+    #print(f"E={set(alphabet)}, P={pos}, N={neg}, k={k}")
     cnf = _gen_cnf(constraints, alphabet, pos, neg, k)
     result, model = _solve(cnf)
     if result:
         pass
-        _print_model(model, alphabet, k)
+        #_print_model(model, alphabet, k)
         #show_automaton(_from_model_to_dfa(model, alphabet, k))
     return _from_model_to_dfa(model, alphabet, k) if result else None
 
@@ -249,11 +249,11 @@ def gen_minaut(alphabet: str, pos: list[str], neg: list[str]) -> DFA:
         #_aut_is_complete,
     ]
 
-    k = 0
+    k = 1
     aut = None
     while aut is None:
-        k += 1
         aut = _gen_aut(constraints, alphabet, pos, neg, k)
+        k += 1
     return aut
 
 # Q4
