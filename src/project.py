@@ -19,29 +19,18 @@ A_ID = 1 # si l'état est accpetant
 T_ID = 2 # les transitions
 V_ID = 3 # les états visiter lors de l'éxécution
 
-# transformation de tseitin
-X_ID = 4
+# Est vrai si l'état n est présent dans l'automate
+p_id = lambda n: vpool.id((P_ID, n))
 
+# Est vrai si l'état n est acceptant
+a_id = lambda n: vpool.id((A_ID, n))
 
-def p_id(n: int) -> int:
-    """ Est vrai si l'état n est présent dans l'automate """
-    return vpool.id((P_ID, n))
+# Est vrai si la transition qui va de l'état i à j avec la lettre l existe
+t_id = lambda i, j, l: vpool.id((T_ID, i, j, l))
 
-def a_id(n: int) -> int:
-    """ Est vrai si l'état n est acceptant """
-    return vpool.id((A_ID, n))
+# Est vrai si l'état n à été visité pour la ième lettre du mot w
+v_id = lambda n, i, w: vpool.id((V_ID, n, i, w))
 
-def t_id(i: int, j: int, l: str) -> int:
-    """ Est vrai si la transition qui va de l'état i à j avec la lettre l existe """
-    return vpool.id((T_ID, i, j, l))
-
-def v_id(n: int, i: int, w: int) -> int:
-    """ Est vrai si l'état n à été visité pour la ième lettre du mot w """
-    return vpool.id((V_ID, n, i, w))
-
-def x_id(i: int, j: int, x: int, w: str):
-    """  """
-    return vpool.id((X_ID, i, j, x, w))
 
 def reverse(v: int) -> tuple:
     """ Retourne la variable sous forme de tuple """
@@ -51,32 +40,28 @@ def reverse(v: int) -> tuple:
     elif tup[0] == A_ID: ret += f"a[{tup[1]}]"
     elif tup[0] == T_ID: ret += f"t[{tup[1]},{tup[2]},{tup[3]}]"
     elif tup[0] == V_ID: ret += f"v[{tup[1]},{tup[2]},{tup[3]}]"
-    elif tup[0] == X_ID: ret += f"x[{tup[1]},{tup[2]},{tup[3]},{tup[4]}]"
+    #elif tup[0] == X_ID: ret += f"x[{tup[1]},{tup[2]},{tup[3]},{tup[4]}]"
     return ret
-
 
 #####################################################
 
 
 #################### CONSTRAINTS ####################
 
-def __source_in_aut():
+def __source_in_aut(**args):
     """ La source est présente dans l'automate """
-    return [p_id(0)]
+    yield [p_id(0)]
 
-
-def _construction(**args):
-    """ L'automate est construit de manière correcte. """
-    
-    yield __source_in_aut()
-
-    # Il y a au moins un état acceptant dans l'automate
+def __min_one_accepting_state(**args):
+    """ Il y a au moins un état acceptant dans l'automate """
     yield [a_id(n) for n in range(args["k"])]
 
-    # Tout les états acceptant sont dans l'automate
+def __states_are_in_aut(**args):
+    """ Tous les états acceptant sont dans l'automate """
     for n in range(args["k"]): yield [-a_id(n), p_id(n)]
 
-    # Les transitions sont valides
+def __transitions_are_valids(**args):
+    """ Toutes les transitions sont valides """
     for i in range(args["k"]):
         for j in range(args["k"]):
             for l in args["alphabet"]:
@@ -84,79 +69,101 @@ def _construction(**args):
                 if i == j: continue
                 yield [-t_id(i,j,l), p_id(j)]
 
-def _aut_is_consistent(**args):
-    """ L'automate est consistant."""
+def _construction(**args):
+    """ L'automate est construit de manière correcte. """
+    constraints = [
+        __source_in_aut,
+        __min_one_accepting_state,
+        __states_are_in_aut,
+        __transitions_are_valids,
+    ]
+    for constraint in constraints:
+        for clause in constraint(**args):
+            yield clause
 
-    #print("-----------------------------------------")
-    #print("--------------- CONSISTANT ---------------")
-    
-    #print("------- SOURCE -------")
-    # Toutes les exécutions commencent à la source
+
+def __all_exec_start_at_q0(**args):
+    """ Toutes les exécutions commencent à la source """
     for w in args["pos"] + args["neg"]:
         yield [v_id(0, 0, w)]
-        #if len(w) == 0: yield [v_id(0, 0, w)]
-        #else: yield [-t_id(0, n, w[0]) for n in range(args["k"])] + [v_id(n, 0, w) for n in range(args["k"])]
 
-    #print("----- ACCEPTANTES ------")
-    # Toutes les exécutions des mots de P sont acceptantes
+def __all_pos_exec_are_ac(**args):
+    """ Toutes les exécutions des mots de P sont acceptantes """
     for w in args["pos"]:
         for n in range(args["k"]):
             yield [-v_id(n, len(w), w), a_id(n)]
-            #yield [-a_id(n), v_id(n, len(w), w)]
 
-    #print("--- NON ACCEPTANTES ----")
-    # Toutes les exécutions des mots de N sont non acceptantes
+def __all_neg_exec_are_not_ac(**args):
+    """ Toutes les exécutions des mots de N sont non acceptantes """
     for w in args["neg"]:
         for n in range(args["k"]):
             yield [-v_id(n, len(w), w), -a_id(n)]
-            #yield [a_id(n), v_id(n, len(w), w)]
 
-    #print("------ VISITES -------")
-    # Un seul état peut être visité en même temps
+def __only_one_visit_at_a_time(**args):
+    """ Un seul état peut être visité à la fois """
     for w in args["pos"] + args["neg"]:
         for x in range(len(w)+1):
             for i in range(args["k"]):
                 for j in range(args["k"]):
                     if i >= j: continue
                     yield [-v_id(i, x, w), -v_id(j, x, w)]
-    
-    #print("------ EXISTENCE -------")
-    # Chaque mot doit avoir une exécution
+
+def __all_pos_exec_exists(**args):
+    """ Il existe une exécution pour chaque mot de P """
     for w in args["pos"]:
         for x in range(1, len(w)+1):
             yield [v_id(i, x, w) for i in range(args["k"])]
-    
-    #print("------ TRANSITIONS -------")
-    # Toutes les exécutions suivent les transitions
+
+def __all_exec_follow_transitions(**args):
+    """ Toutes les exécutions suivent les transitions """
     for w in args["pos"] + args["neg"]:
         for x in range(len(w)):
             for i in range(args["k"]):
-                #yield [-v_id(i, x, w)] + [x_id(i, j, x, w) for j in range(args["k"])]
                 for j in range(args["k"]):
-                    #yield [-x_id(i, j, x, w), v_id(j, x+1, w)]
-                    #yield [-x_id(i, j, x, w), t_id(i, j, w[x])]
-                    #yield [-v_id(j, x+1, w), -t_id(i, j, w[x]), x_id(i, j, x, w)]
                     yield [-v_id(i, x, w), -t_id(i, j, w[x]), v_id(j, x+1, w)]
                     yield [-v_id(i, x, w), -v_id(j, x+1, w), t_id(i,j,w[x])]
 
-def _aut_is_complete(**args):
-    """ L'automate est complet. """
+def _aut_is_consistent(**args):
+    """ L'automate est consistant."""
+    constraints = [
+        __all_exec_start_at_q0,
+        __all_pos_exec_are_ac,
+        __all_neg_exec_are_not_ac,
+        __only_one_visit_at_a_time,
+        __all_pos_exec_exists,
+        __all_exec_follow_transitions,
+    ]
+    for constraint in constraints:
+        for clause in constraint(**args):
+            yield clause
 
-    #print("-----------------------------------------")
-    #print("--------------- COMPLETE ---------------")
-    
-    #print("----- 2 SORTANTES ------")
-    # Pour chaque état il y a une transition sortante pour chaque lettre de l'alphabet
+
+def __all_neg_exec_exists(**args):
+    """ Il existe une exécution pour chaque mot de P """
+    for w in args["neg"]:
+        yield [v_id(i, len(w), w) for i in range(args["k"])]
+
+def __all_states_has_outgoing_transitions(**args):
+    """ Pour chaque état il y a une transition sortante pour chaque lettre de l'alphabet """
     for i in range(args["k"]):
         for l in args["alphabet"]:
             yield [t_id(i, j, l) for j in range(args["k"])]
 
-    #print("----- 1 ENTRANTE ------")
-    # Pour chaque état il y a une transition entrante pour au moins une lettre de l'alphabet
+def __all_states_has_incoming_transitions(**args):
+    """ Pour chaque état il y a une transition entrante pour au moins une lettre de l'alphabet """
     for i in range(args["k"]):
-        pass
-        #yield [t_id(j, i, l) for j in range(args["k"]) for l in args["alphabet"]]
+        yield [t_id(j, i, l) for j in range(args["k"]) for l in args["alphabet"]]
 
+def _aut_is_complete(**args):
+    """ L'automate est complet. """
+    constraints = [
+        __all_neg_exec_exists,
+        __all_states_has_outgoing_transitions,
+        __all_states_has_incoming_transitions,
+    ]
+    for constraint in constraints:
+        for clause in constraint(**args):
+            yield clause
 
 #####################################################
 
