@@ -69,16 +69,6 @@ def _construction(**args):
         for clause in constraint(**args):
             yield clause
 
-
-def _aut_is_finite(**args):
-    """ L'automate est fini  """
-    for l in args["alphabet"]:
-        for x in range(args["k"]):
-            for y in range(args["k"]):
-                if x>y: continue
-                yield [-t_id(x, y, l)]+ [-t_id(x, z, l) for z in range(args["k"])]
-
-
 def __all_exec_start_at_q0(**args):
     """ Toutes les exécutions commencent à la source """
     for w in args["pos"] + args["neg"]:
@@ -134,6 +124,28 @@ def _aut_is_consistent(**args):
         for clause in constraint(**args):
             yield clause
 
+def _transitions_are_unique(**args):
+    """ Chaque état ne peut avoir qu'au plus une transition par lettre de l'alphabet """
+    for l in args["alphabet"]:
+        for x in range(args["k"]):
+            for y in range(args["k"]):
+                for z in range(args["k"]):
+                    if y == z or x>y: continue
+                    yield [-t_id(x,y,l), -t_id(x,z,l)]
+
+def _i_forgot(**args):
+    ...
+
+
+def _aut_is_finite(**args):
+    """ L'automate est fini  """
+    constraints = [
+        _transitions_are_unique,
+        #_i_forgot,
+    ]
+    for constraint in constraints:
+        for clause in constraint(**args):
+            yield clause
 
 def __all_neg_exec_exists(**args):
     """ Il existe une exécution pour chaque mot de N """
@@ -162,10 +174,18 @@ def _aut_is_complete(**args):
         for clause in constraint(**args):
             yield clause
 
-
 def _aut_is_reverse(**args):
     """ L'automate est réversible. """
     return _aut_is_consistent(**args, reverse=True)
+
+def _aut_is_no_deterministic(**args):
+    """ L'automate n'est pas déterministe. """
+    for i in range(args["k"]):
+        for j in range(args["k"]):
+            for l in args["alphabet"]:
+                for m in range(args["k"]):
+                    if i == m: continue
+                    yield [-t_id(i, j, l), -t_id(m, j, l)]
 
 #####################################################
 
@@ -256,14 +276,12 @@ def _gen_aut(constraints : list, alphabet: str, pos: list[str], neg: list[str], 
         _construction,
         _aut_is_consistent,
     ] + constraints
-    fa = "NFA" if nfa(**args) else "DFA"
-    if nfa(**args): constraints.append(_aut_is_finite)
-    # constraints.append(_aut_is_finite)
     if verbose(**args): print(f"-----------------------------------------\nE={set(alphabet)}, P={pos}, N={neg}, k={k}")
     cnf = _gen_cnf(constraints, alphabet, pos, neg, k, **args)
     result, model = _solve(cnf)
     if result and verbose(**args): _print_model(model, alphabet, k)
     #show_automaton(_from_model_to_dfa(model, alphabet, k))
+    fa = "NFA" if nfa(**args) else "DFA"
     return _from_model_to_fa(model, alphabet, k, FA=fa) if result else None
 
 ###############################################
@@ -272,7 +290,7 @@ def _gen_aut(constraints : list, alphabet: str, pos: list[str], neg: list[str], 
 
 # Q2
 def gen_aut(alphabet: str, pos: list[str], neg: list[str], k: int) -> DFA:
-    return _gen_aut([], alphabet, pos, neg, k)
+    return _gen_aut([_aut_is_finite], alphabet, pos, neg, k)
 
 # Q3
 def gen_minaut(alphabet: str, pos: list[str], neg: list[str], k: int=1) -> DFA:
@@ -281,19 +299,20 @@ def gen_minaut(alphabet: str, pos: list[str], neg: list[str], k: int=1) -> DFA:
 
 # Q4
 def gen_autc(alphabet: str, pos: list[str], neg: list[str], k: int) -> DFA:
-    return _gen_aut([_aut_is_complete], alphabet, pos, neg, k)
+    return _gen_aut([_aut_is_finite, _aut_is_complete], alphabet, pos, neg, k)
 
 # Q5
 def gen_autr(alphabet: str, pos: list[str], neg: list[str], k: int) -> DFA:
-    return _gen_aut([_aut_is_reverse], alphabet, pos, neg, k)
+    return _gen_aut([_aut_is_finite, _aut_is_reverse], alphabet, pos, neg, k)
 
 # Q6
 def gen_autcard(alphabet: str, pos: list[str], neg: list[str], k: int, ell: int) -> DFA:
-    return _gen_aut([], alphabet, pos, neg, k, cnfplus=True, ell=ell)
+    return _gen_aut([_aut_is_finite], alphabet, pos, neg, k, cnfplus=True, ell=ell)
 
 # Q7
 def gen_autn(alphabet: str, pos: list[str], neg: list[str], k: int) -> NFA:
-    return _gen_aut([], alphabet, pos, neg, k, FA="NFA")
+    #return _gen_aut([_aut_is_finite], alphabet, pos, neg, k)    
+    return _gen_aut([_aut_is_no_deterministic], alphabet, pos, neg, k, FA="NFA", verbose=True)
 
 ######################################################
 
