@@ -162,15 +162,22 @@ def _aut_is_reverse(**args):
 
 #################### MODEL -> DFA ####################
 
-def _from_model_to_dfa(model: list[int], alphabet: str, k: int) -> DFA:
+def _from_model_to_fa(model: list[int], alphabet: str, k: int, FA="DFA") -> FA:
     """ Convertit un modèle SAT en un DFA"""
-    return DFA(
+    return DFA (
         states=_get_states_from_model(model, k),
         input_symbols=set(alphabet),
         transitions=_get_transitions_from_model(model, alphabet, k),
         initial_state="q0",
         final_states=_get_final_states_from_model(model, k),
         allow_partial=True
+    ) if FA == "DFA" else \
+            NFA (
+        states=_get_states_from_model(model, k),
+        input_symbols=set(alphabet),
+        transitions=_get_transitions_from_model(model, alphabet, k),
+        initial_state="q0",
+        final_states=_get_final_states_from_model(model, k)
     )
 
 def _get_states_from_model(model: list[int], k: int) -> set[int]:
@@ -198,6 +205,7 @@ def _get_transitions_from_model(model: list[int], alphabet: str, k: int) -> dict
 verbose = lambda **args: "verbose" in args and args["verbose"]
 cnfplus = lambda **args: "cnfplus" in args and args["cnfplus"]
 reverse_visit = lambda **args: "reverse" in args and args["reverse"]
+nfa = lambda **args: "FA" in args and args["FA"]=="NFA"
 
 def _gen_cnf(constraints: list, alphabet: str, pos: list[str], neg: list[str], k: int, **args) -> CNF:
     """ Génère une CNF à partir d'une liste de contraintes"""
@@ -231,7 +239,6 @@ def reverse(v: int) -> tuple:
     elif tup[0] == A_ID: ret += f"a[{tup[1]}]"
     elif tup[0] == T_ID: ret += f"t[{tup[1]},{tup[2]},{tup[3]}]"
     elif tup[0] == V_ID: ret += f"v[{tup[1]},{tup[2]},{tup[3]}]"
-    elif tup[0] == RV_ID: ret += f"rv[{tup[1]},{tup[2]},{tup[3]}]"
     return ret
 
 def _gen_aut(constraints : list, alphabet: str, pos: list[str], neg: list[str], k: int, **args) -> DFA:
@@ -245,7 +252,8 @@ def _gen_aut(constraints : list, alphabet: str, pos: list[str], neg: list[str], 
     result, model = _solve(cnf)
     if result and verbose(**args): _print_model(model, alphabet, k)
     #show_automaton(_from_model_to_dfa(model, alphabet, k))
-    return _from_model_to_dfa(model, alphabet, k) if result else None
+    fa = "NFA" if nfa(**args) else "DFA"
+    return _from_model_to_fa(model, alphabet, k, FA=fa) if result else None
 
 ###############################################
 
@@ -274,8 +282,7 @@ def gen_autcard(alphabet: str, pos: list[str], neg: list[str], k: int, ell: int)
 
 # Q7
 def gen_autn(alphabet: str, pos: list[str], neg: list[str], k: int) -> NFA:
-    # TODO
-    return None
+    return _gen_aut([], alphabet, pos, neg, k, fa="NFA")
 
 ######################################################
 
@@ -285,7 +292,7 @@ def main():
     test_autc()
     test_autr()
     test_autcard()
-    #test_autn()
+    test_autn()
 
 if __name__ == '__main__':
     main()
