@@ -70,6 +70,15 @@ def _construction(**args):
             yield clause
 
 
+def _aut_is_finite(**args):
+    """ L'automate est fini  """
+    for l in args["alphabet"]:
+        for x in range(args["k"]):
+            for y in range(args["k"]):
+                if x>y: continue
+                yield [-t_id(x, y, l)]+ [-t_id(x, z, l) for z in range(args["k"])]
+
+
 def __all_exec_start_at_q0(**args):
     """ Toutes les exécutions commencent à la source """
     for w in args["pos"] + args["neg"]:
@@ -247,12 +256,14 @@ def _gen_aut(constraints : list, alphabet: str, pos: list[str], neg: list[str], 
         _construction,
         _aut_is_consistent,
     ] + constraints
+    fa = "NFA" if nfa(**args) else "DFA"
+    if nfa(**args): constraints.append(_aut_is_finite)
+    # constraints.append(_aut_is_finite)
     if verbose(**args): print(f"-----------------------------------------\nE={set(alphabet)}, P={pos}, N={neg}, k={k}")
     cnf = _gen_cnf(constraints, alphabet, pos, neg, k, **args)
     result, model = _solve(cnf)
     if result and verbose(**args): _print_model(model, alphabet, k)
     #show_automaton(_from_model_to_dfa(model, alphabet, k))
-    fa = "NFA" if nfa(**args) else "DFA"
     return _from_model_to_fa(model, alphabet, k, FA=fa) if result else None
 
 ###############################################
@@ -282,7 +293,7 @@ def gen_autcard(alphabet: str, pos: list[str], neg: list[str], k: int, ell: int)
 
 # Q7
 def gen_autn(alphabet: str, pos: list[str], neg: list[str], k: int) -> NFA:
-    return _gen_aut([], alphabet, pos, neg, k, fa="NFA")
+    return _gen_aut([], alphabet, pos, neg, k, FA="NFA")
 
 ######################################################
 
