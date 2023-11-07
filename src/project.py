@@ -203,7 +203,7 @@ def _from_model_to_fa(model: list[int], alphabet: str, k: int, FA="DFA") -> FA:
     return DFA (
         states=_get_states_from_model(model, k),
         input_symbols=set(alphabet),
-        transitions=_get_transitions_from_model(model, alphabet, k),
+        transitions=_get_d_transitions_from_model(model, alphabet, k),
         initial_state="q0",
         final_states=_get_final_states_from_model(model, k),
         allow_partial=True
@@ -211,7 +211,7 @@ def _from_model_to_fa(model: list[int], alphabet: str, k: int, FA="DFA") -> FA:
             NFA (
         states=_get_states_from_model(model, k),
         input_symbols=set(alphabet),
-        transitions=_get_transitions_from_model(model, alphabet, k),
+        transitions=_get_nd_transitions_from_model(model, alphabet, k),
         initial_state="q0",
         final_states=_get_final_states_from_model(model, k)
     )
@@ -224,14 +224,27 @@ def _get_final_states_from_model(model: list[int], k) -> set[int]:
     """ Retourne l'ensemble des états acceptants présents dans le modèle"""
     return {f"q{i}" for i in range(k) if a_id(i) in model}
 
-def _get_transitions_from_model(model: list[int], alphabet: str, k: int) -> dict[tuple[int, str], int]:
+def _get_d_transitions_from_model(model: list[int], alphabet: str, k: int) -> dict[tuple[int, str], int]:
     """ Retourne l'ensemble des transitions présentes dans le modèle"""
-    transitions = {f"q{i}" : {} for i in range(k) if p_id(i) in model}
+    transitions = {f"q{i}" : dict() for i in range(k) if p_id(i) in model}
     for i in range(k):
         for j in range(k):
             for l in alphabet:
                 if t_id(i, j, l) in model:
                     transitions[f"q{i}"][l] = f"q{j}"
+    return transitions
+
+def _get_nd_transitions_from_model(model: list[int], alphabet: str, k: int) -> dict[tuple[int, {str}], int]:
+    """ Retourne l'ensemble des transitions présentes dans le modèle"""
+    transitions = {f"q{i}" : dict() for i in range(k) if p_id(i) in model}
+    for i in range(k):
+        for j in range(k):
+            for l in alphabet:
+                if t_id(i, j, l) in model:
+                    if l not in transitions[f"q{i}"]:
+                        transitions[f"q{i}"][l] = {f"q{j}"}
+                    else:
+                        transitions[f"q{i}"][l].add(f"q{j}")
     return transitions
 
 ######################################################
@@ -265,7 +278,7 @@ def _print_model(model: list[int], alphabet: str, k: int) -> None:
     """ Affiche un modèle"""
     print(f"states={_get_states_from_model(model, k)}")
     print(f"final_states={_get_final_states_from_model(model, k)}")
-    print(f"transitions={_get_transitions_from_model(model, alphabet, k)}")
+    print(f"transitions={_get_nd_transitions_from_model(model, alphabet, k)}")
 
 def reverse(v: int) -> tuple:
     """ Retourne la variable sous forme de tuple """
@@ -319,7 +332,7 @@ def gen_autcard(alphabet: str, pos: list[str], neg: list[str], k: int, ell: int)
 # Q7
 def gen_autn(alphabet: str, pos: list[str], neg: list[str], k: int) -> NFA:
     #return _gen_aut([_aut_is_finite], alphabet, pos, neg, k)    
-    return _gen_aut([_aut_is_no_deterministic], alphabet, pos, neg, k, FA="NFA", verbose=True)
+    return _gen_aut([_aut_is_no_deterministic], alphabet, pos, neg, k, FA="NFA", verbose=False)
 
 ######################################################
 
