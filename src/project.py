@@ -261,7 +261,8 @@ def _gen_cnf(constraints: list, alphabet: str, pos: list[str], neg: list[str], k
     cnf = CNF() if not cnfplus(**args) else CNFPlus()
     for constraint in constraints:
         for clause in constraint(alphabet=alphabet, pos=pos, neg=neg, k=k, **args):
-            #print([reverse(prop) for prop in clause])
+            # print in a file
+            print([reverse(prop) for prop in clause], file=open("output.txt", "a"))
             cnf.append(clause)
     if cnfplus(**args) and "ell" in args:
         cnf.append([[a_id(i) for i in range(k)], args["ell"]], is_atmost=True)
@@ -331,8 +332,8 @@ def gen_autcard(alphabet: str, pos: list[str], neg: list[str], k: int, ell: int)
 
 # Q7
 def gen_autn(alphabet: str, pos: list[str], neg: list[str], k: int) -> NFA:
-    #return _gen_aut([_aut_is_finite], alphabet, pos, neg, k)    
-    return _gen_aut([_aut_is_no_deterministic], alphabet, pos, neg, k, FA="NFA", verbose=False)
+    return _gen_aut([], alphabet, pos, neg, k, verbose=True)
+     # return _gen_aut([_aut_is_no_deterministic], alphabet, pos, neg, k, FA="NFA", verbose=True)
 
 ######################################################
 
@@ -345,4 +346,7 @@ def main():
     test_autn()
 
 if __name__ == '__main__':
-    main()
+    gen_autn('ab', ['abaa', 'baa', 'baaabba', 'baabbb', 'bab', 'babaa', 'babbab', 'babbb', 'bba', 'bbaa', 'bbab', 'bbabba', 'bbb', 'bbba', 'bbbab', 'bbbb', 'bbbba', 'bbbbab'],
+           ['', 'a', 'aa', 'aaa', 'b', 'ba', 'baaa', 'baaaa', 'baab', 'baba', 'bababb', 'babb', 'bb', 'bbaaa', 'bbaaba', 'bbabb', 'bbbabb'], 4)
+    # main()
+
