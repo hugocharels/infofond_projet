@@ -19,6 +19,8 @@ A_ID = 1 # si l'état est accpetant
 T_ID = 2 # les transitions
 V_ID = 3 # les états visiter lors de l'éxécution
 
+D_ID = 4
+
 # Est vrai si l'état n est présent dans l'automate
 p_id = lambda n: vpool.id((P_ID, n))
 
@@ -30,6 +32,9 @@ t_id = lambda i, j, l: vpool.id((T_ID, i, j, l))
 
 # Est vrai si l'état n à été visité pour la ième lettre du mot w
 v_id = lambda n, i, w: vpool.id((V_ID, n, i, w))
+
+# Est vrai s'il y a une transition qui va de x à y et une autre de x à z pour la même lettre l
+d_id = lambda x, y, z, l: vpool.id((D_ID, x, y, z, l))
 
 #####################################################
 
@@ -180,12 +185,14 @@ def _aut_is_reverse(**args):
 
 def _aut_is_no_deterministic(**args):
     """ L'automate n'est pas déterministe. """
-    for i in range(args["k"]):
-        for j in range(args["k"]):
-            for l in args["alphabet"]:
-                for m in range(args["k"]):
-                    if i == m: continue
-                    yield [-t_id(i, j, l), -t_id(m, j, l)]
+    yield [d_id(x, y, z, l) for x in range(args["k"]) for y in range(args["k"]) for z in range(args["k"]) for l in args["alphabet"] if y != z]
+    for x in range(args["k"]):
+        for y in range(args["k"]):
+            for z in range(args["k"]):
+                for l in args["alphabet"]:
+                    yield [-d_id(x, y, z, l), t_id(x, y, l)]
+                    yield [-d_id(x, y, z, l), t_id(x, z, l)]
+                    yield [d_id(x, y, z, l), -t_id(x, y, l), -t_id(x, z, l)]
 
 #####################################################
 
