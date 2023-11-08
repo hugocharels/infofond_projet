@@ -132,7 +132,7 @@ def _aut_is_consistent(**args):
         __all_exec_start_at_q0,
         __all_pos_exec_are_ac,
         __all_neg_exec_are_not_ac,
-        __only_one_visit_at_a_time,
+        # __only_one_visit_at_a_time,
         __all_pos_exec_exists,
         __all_exec_follow_transitions,
     ]
@@ -343,7 +343,7 @@ def gen_autcard(alphabet: str, pos: list[str], neg: list[str], k: int, ell: int)
 
 # Q7
 def gen_autn(alphabet: str, pos: list[str], neg: list[str], k: int) -> NFA:
-    return _gen_aut([], alphabet, pos, neg, k, verbose=True)
+    return _gen_aut([], alphabet, pos, neg, k, verbose=False)
      # return _gen_aut([_aut_is_no_deterministic], alphabet, pos, neg, k, FA="NFA", verbose=True)
 
 ######################################################
