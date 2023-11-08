@@ -19,7 +19,8 @@ A_ID = 1 # si l'état est accpetant
 T_ID = 2 # les transitions
 V_ID = 3 # les états visiter lors de l'éxécution
 
-D_ID = 4
+X_ID = 4
+D_ID = 5
 
 # Est vrai si l'état n est présent dans l'automate
 p_id = lambda n: vpool.id((P_ID, n))
@@ -32,6 +33,8 @@ t_id = lambda i, j, l: vpool.id((T_ID, i, j, l))
 
 # Est vrai si l'état n à été visité pour la ième lettre du mot w
 v_id = lambda n, i, w: vpool.id((V_ID, n, i, w))
+
+x_id = lambda n, s, w: vpool.id((X_ID, n, s, w))
 
 # Est vrai s'il y a une transition qui va de x à y et une autre de x à z pour la même lettre l
 d_id = lambda x, y, z, l: vpool.id((D_ID, x, y, z, l))
@@ -82,14 +85,22 @@ def __all_exec_start_at_q0(**args):
 def __all_pos_exec_are_ac(**args):
     """ Toutes les exécutions des mots de P sont acceptantes """
     for w in args["pos"]:
+        yield [x_id(n, len(w), w) for n in range(args["k"])]
         for n in range(args["k"]):
-            yield [-v_id(n, len(w), w), a_id(n)]
+            # yield [-v_id(n, len(w), w), a_id(n)]
+            yield [-x_id(n, len(w), w), v_id(n, len(w), w)]
+            yield [-x_id(n, len(w), w), a_id(n)]
+            yield [-v_id(n, len(w), w), -a_id(n), x_id(n, len(w), w)]
 
 def __all_neg_exec_are_not_ac(**args):
     """ Toutes les exécutions des mots de N sont non acceptantes """
     for w in args["neg"]:
+        ret = []
         for n in range(args["k"]):
             yield [-v_id(n, len(w), w), -a_id(n)]
+            # ret.append(-v_id(n, len(w), w))
+            # ret.append(-a_id(n))
+        # yield ret
 
 def __only_one_visit_at_a_time(**args):
     """ Un seul état peut être visité à la fois """
@@ -171,7 +182,7 @@ def __all_states_has_incoming_transitions(**args):
 def _aut_is_complete(**args):
     """ L'automate est complet. """
     constraints = [
-        __all_neg_exec_exists,
+        # __all_neg_exec_exists,
         __all_states_has_outgoing_transitions,
         __all_states_has_incoming_transitions,
     ]
@@ -346,7 +357,7 @@ def main():
     test_autn()
 
 if __name__ == '__main__':
-    gen_autn('ab', ['abaa', 'baa', 'baaabba', 'baabbb', 'bab', 'babaa', 'babbab', 'babbb', 'bba', 'bbaa', 'bbab', 'bbabba', 'bbb', 'bbba', 'bbbab', 'bbbb', 'bbbba', 'bbbbab'],
-           ['', 'a', 'aa', 'aaa', 'b', 'ba', 'baaa', 'baaaa', 'baab', 'baba', 'bababb', 'babb', 'bb', 'bbaaa', 'bbaaba', 'bbabb', 'bbbabb'], 4)
-    # main()
+    # gen_autn('ab', ['abaa', 'baa', 'baaabba', 'baabbb', 'bab', 'babaa', 'babbab', 'babbb', 'bba', 'bbaa', 'bbab', 'bbabba', 'bbb', 'bbba', 'bbbab', 'bbbb', 'bbbba', 'bbbbab'],
+           # ['', 'a', 'aa', 'aaa', 'b', 'ba', 'baaa', 'baaaa', 'baab', 'baba', 'bababb', 'babb', 'bb', 'bbaaa', 'bbaaba', 'bbabb', 'bbbabb'], 4)
+    main()
 
