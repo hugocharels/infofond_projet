@@ -48,11 +48,7 @@ def __source_in_aut(**args):
     """ La source est présente dans l'automate """
     yield [p_id(0)]
 
-def __min_one_accepting_state(**args):
-    """ Il y a au moins un état acceptant dans l'automate """
-    yield [a_id(n) for n in range(args["k"])]
-
-def __states_are_in_aut(**args):
+def __ac_states_are_in_aut(**args):
     """ Tous les états acceptant sont dans l'automate """
     for n in range(args["k"]): yield [-a_id(n), p_id(n)]
 
@@ -69,8 +65,7 @@ def _construction(**args):
     """ L'automate est construit de manière correcte. """
     constraints = [
         __source_in_aut,
-        #__min_one_accepting_state,
-        __states_are_in_aut,
+        __ac_states_are_in_aut,
         __transitions_are_valids,
     ]
     for constraint in constraints:
@@ -103,7 +98,7 @@ def __all_pos_exec_exists(**args):
     for w in args["pos"]:
         for x in range(1, len(w)+1):
             yield [v_id(i, x, w) for i in range(args["k"])]
-        #yield [v_id(i, len(w), w) for i in range(args["k"])]
+        # yield [v_id(i, len(w), w) for i in range(args["k"])]
 
 
 def __all_exec_follow_transitions(**args):
@@ -137,29 +132,14 @@ def __transitions_are_unique(**args):
                     if y == z or x>y: continue
                     yield [-t_id(x,y,l), -t_id(x,z,l)]
 
-def __only_one_visit_at_a_time(**args):
-    """ Un seul état peut être visité à la fois """
-    for w in args["pos"] + args["neg"]:
-        for x in range(len(w)+1):
-            for i in range(args["k"]):
-                for j in range(args["k"]):
-                    if i >= j: continue
-                    yield [-v_id(i, x, w), -v_id(j, x, w)]
-
 def _aut_is_deterministic(**args):
     """ L'automate est fini  """
     constraints = [
-        __only_one_visit_at_a_time,
         __transitions_are_unique,
     ]
     for constraint in constraints:
         for clause in constraint(**args):
             yield clause
-
-def __all_neg_exec_exists(**args):
-    """ Il existe une exécution pour chaque mot de N """
-    for w in args["neg"]:
-        yield [v_id(i, len(w), w) for i in range(args["k"])]
 
 def __all_states_has_outgoing_transitions(**args):
     """ Pour chaque état il y a une transition sortante pour chaque lettre de l'alphabet """
@@ -175,7 +155,6 @@ def __all_states_has_incoming_transitions(**args):
 def _aut_is_complete(**args):
     """ L'automate est complet. """
     constraints = [
-        # __all_neg_exec_exists,
         __all_states_has_outgoing_transitions,
         __all_states_has_incoming_transitions,
     ]
@@ -187,17 +166,6 @@ def _aut_is_reverse(**args):
     """ L'automate est réversible. """
     for clause in _aut_is_consistent(**args, reverse=True):
         yield clause
-
-def _aut_is_no_deterministic(**args):
-    """ L'automate n'est pas déterministe. """
-    yield [d_id(x, y, z, l) for x in range(args["k"]) for y in range(args["k"]) for z in range(args["k"]) for l in args["alphabet"] if y != z]
-    for x in range(args["k"]):
-        for y in range(args["k"]):
-            for z in range(args["k"]):
-                for l in args["alphabet"]:
-                    yield [-d_id(x, y, z, l), t_id(x, y, l)]
-                    yield [-d_id(x, y, z, l), t_id(x, z, l)]
-                    yield [d_id(x, y, z, l), -t_id(x, y, l), -t_id(x, z, l)]
 
 #####################################################
 
@@ -337,7 +305,7 @@ def gen_autcard(alphabet: str, pos: list[str], neg: list[str], k: int, ell: int)
 
 # Q7
 def gen_autn(alphabet: str, pos: list[str], neg: list[str], k: int) -> NFA:
-    return _gen_aut([], alphabet, pos, neg, k, verbose=False)
+    return _gen_aut([], alphabet, pos, neg, k, verbose=True)
     #return _gen_aut([_aut_is_no_deterministic], alphabet, pos, neg, k, FA="NFA", verbose=True)
 
 ######################################################
