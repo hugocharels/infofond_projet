@@ -20,7 +20,6 @@ T_ID = 2 # les transitions
 V_ID = 3 # les états visiter lors de l'éxécution
 
 X_ID = 4
-D_ID = 5
 
 # Est vrai si l'état n est présent dans l'automate
 p_id = lambda n: vpool.id((P_ID, n))
@@ -35,9 +34,6 @@ t_id = lambda i, j, l: vpool.id((T_ID, i, j, l))
 v_id = lambda n, i, w: vpool.id((V_ID, n, i, w))
 
 x_id = lambda n, s, w: vpool.id((X_ID, n, s, w))
-
-# Est vrai s'il y a une transition qui va de x à y et une autre de x à z pour la même lettre l
-d_id = lambda x, y, z, l: vpool.id((D_ID, x, y, z, l))
 
 #####################################################
 
@@ -100,15 +96,14 @@ def __all_pos_exec_exists(**args):
             yield [v_id(i, x, w) for i in range(args["k"])]
         # yield [v_id(i, len(w), w) for i in range(args["k"])]
 
-
 def __all_exec_follow_transitions(**args):
     """ Toutes les exécutions suivent les transitions """
     for w in args["pos"] + args["neg"]:
         for x in range(len(w)):
             for i in range(args["k"]):
                 for j in range(args["k"]):
-                    yield [-v_id(i, x, w), -t_id(i, j, w[x]), v_id(j, x+1, w)] if not reverse_visit(**args) else [-v_id(j, x, w), -t_id(j, i, w[x]), v_id(i, x+1, w)]
-                    yield [-v_id(i, x, w), -v_id(j, x+1, w), t_id(i, j, w[x])] if not reverse_visit(**args) else [-v_id(j, x, w), -v_id(i, x+1, w), t_id(j, i, w[x])]
+                    yield [-v_id(i, x, w), -t_id(i, j, w[x]), v_id(j, x+1, w)]
+                    yield [-v_id(i, x, w), -v_id(j, x+1, w), t_id(i, j, w[x])]
 
 def _aut_is_consistent(**args):
     """ L'automate est consistant."""
@@ -161,6 +156,15 @@ def _aut_is_complete(**args):
     for constraint in constraints:
         for clause in constraint(**args):
             yield clause
+
+def __all_exec_follow_reverse_transitions(**args):
+    """ Toutes les exécutions suivent les transitions inversées """
+    for w in args["pos"] + args["neg"]:
+        for x in range(len(w)):
+            for i in range(args["k"]):
+                for j in range(args["k"]):
+                    yield [-v_id(j, x, w), -t_id(j, i, w[x]), v_id(i, x+1, w)]
+                    yield [-v_id(j, x, w), -v_id(i, x+1, w), t_id(j, i, w[x])]
 
 def _aut_is_reverse(**args):
     """ L'automate est réversible. """
@@ -226,7 +230,6 @@ def _get_nd_transitions_from_model(model: list[int], alphabet: str, k: int) -> d
 
 verbose = lambda **args: "verbose" in args and args["verbose"]
 cnfplus = lambda **args: "cnfplus" in args and args["cnfplus"]
-reverse_visit = lambda **args: "reverse" in args and args["reverse"]
 nfa = lambda **args: "FA" in args and args["FA"]=="NFA"
 
 def _gen_cnf(constraints: list, alphabet: str, pos: list[str], neg: list[str], k: int, **args) -> CNF:
