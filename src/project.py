@@ -238,7 +238,7 @@ def _gen_cnf(constraints: list, alphabet: str, pos: list[str], neg: list[str], k
     for constraint in constraints:
         for clause in constraint(alphabet=alphabet, pos=pos, neg=neg, k=k, **args):
             # print in a file
-            print([reverse(prop) for prop in clause], file=open("output.txt", "a"))
+            #print([reverse(prop) for prop in clause], file=open("output.txt", "a"))
             cnf.append(clause)
     if cnfplus(**args) and "ell" in args:
         cnf.append([[a_id(i) for i in range(k)], args["ell"]], is_atmost=True)
@@ -265,7 +265,7 @@ def reverse(v: int) -> tuple:
     elif tup[0] == A_ID: ret += f"a[{tup[1]}]"
     elif tup[0] == T_ID: ret += f"t[{tup[1]},{tup[2]},{tup[3]}]"
     elif tup[0] == V_ID: ret += f"v[{tup[1]},{tup[2]},{tup[3]}]"
-    elif tup[0] == X_ID: ret += f"v[{tup[1]},{tup[2]},{tup[3]}]"
+    elif tup[0] == X_ID: ret += f"x[{tup[1]},{tup[2]},{tup[3]}]"
     return ret
 
 def _gen_aut(constraints : list, alphabet: str, pos: list[str], neg: list[str], k: int, **args) -> DFA:
@@ -322,7 +322,6 @@ def main():
     test_autn()
 
 if __name__ == '__main__':
-    gen_autn('ab', ['abaa', 'baa', 'baaabba', 'baabbb', 'bab', 'babaa', 'babbab', 'babbb', 'bba', 'bbaa', 'bbab', 'bbabba', 'bbb', 'bbba', 'bbbab', 'bbbb', 'bbbba', 'bbbbab'],
-           ['', 'a', 'aa', 'aaa', 'b', 'ba', 'baaa', 'baaaa', 'baab', 'baba', 'bababb', 'babb', 'bb', 'bbaaa', 'bbaaba', 'bbabb', 'bbbabb'], 4)
-    #main()
-
+    #gen_autn('ab', ['abaa', 'baa', 'baaabba', 'baabbb', 'bab', 'babaa', 'babbab', 'babbb', 'bba', 'bbaa', 'bbab', 'bbabba', 'bbb', 'bbba', 'bbbab', 'bbbb', 'bbbba', 'bbbbab'],
+    #       ['', 'a', 'aa', 'aaa', 'b', 'ba', 'baaa', 'baaaa', 'baab', 'baba', 'bababb', 'babb', 'bb', 'bbaaa', 'bbaaba', 'bbabb', 'bbbabb'], 4)
+    main()
