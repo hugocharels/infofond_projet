@@ -5,7 +5,7 @@ from automata.fa.fa import FA
 from automata.fa.dfa import DFA
 from automata.fa.nfa import NFA
 
-from pysat.solvers import Minisat22, Minicard
+from pysat.solvers import Minisat22, Minicard, Solver
 from pysat.formula import CNF, CNFPlus, IDPool
 from pysat.card import CardEnc
 
@@ -43,6 +43,13 @@ x_id = lambda n, s, w: vpool.id((X_ID, n, s, w))
 def __source_in_aut(**args):
     """ La source est présente dans l'automate """
     yield [p_id(0)]
+    
+    #yield [p_id(1)]
+    #yield [t_id(0,1,'a')]
+    #yield [t_id(0,1,'b')]
+    #yield [t_id(1,1,'a')]
+    #yield [t_id(1,0,'a')]
+    #yield [t_id(1,0,'b')]
 
 def __ac_states_are_in_aut(**args):
     """ Tous les états acceptant sont dans l'automate """
@@ -53,7 +60,6 @@ def __transitions_are_valids(**args):
     for i in range(0, args["k"]):
         for j in range(1, args["k"]):
             for l in args["alphabet"]:
-                # need optimization
                 if i!=0: yield [-t_id(i,j,l), p_id(i)]
                 if i == j: continue
                 yield [-t_id(i,j,l), p_id(j)]
@@ -79,7 +85,7 @@ def __all_pos_exec_are_ac(**args):
     for w in args["pos"]:
         yield [x_id(n, len(w), w) for n in range(args["k"])]
         for n in range(args["k"]):
-            # yield [-v_id(n, len(w), w), a_id(n)]
+            #yield [-v_id(n, len(w), w), a_id(n)]
             yield [-x_id(n, len(w), w), v_id(n, len(w), w)]
             yield [-x_id(n, len(w), w), a_id(n)]
             yield [-v_id(n, len(w), w), -a_id(n), x_id(n, len(w), w)]
@@ -95,7 +101,7 @@ def __all_pos_exec_exists(**args):
     for w in args["pos"]:
         for x in range(1, len(w)+1):
             yield [v_id(i, x, w) for i in range(args["k"])]
-        # yield [v_id(i, len(w), w) for i in range(args["k"])]
+        #yield [v_id(i, len(w), w) for i in range(args["k"])]
 
 def __all_exec_follow_transitions(**args):
     """ Toutes les exécutions suivent les transitions """
@@ -111,12 +117,11 @@ def _aut_is_consistent(**args):
     """ L'automate est consistant."""
     constraints = [
         __all_exec_start_at_q0,
-        __all_pos_exec_are_ac,
         __all_neg_exec_are_not_ac,
+        __all_pos_exec_are_ac,
         __all_pos_exec_exists,
         __all_exec_follow_transitions,
     ]
-    #yield [t_id(0, 0, 'a')]
     for constraint in constraints:
         for clause in constraint(**args):
             yield clause
@@ -250,13 +255,15 @@ def _gen_cnf(constraints: list, alphabet: str, pos: list[str], neg: list[str], k
 
 def _solve(cnf: CNF) -> (bool, list[int]):
     """ Résoud une CNF"""
-    if isinstance(cnf, CNFPlus): solver = Minicard(use_timer=True)
-    else: solver = Minisat22(use_timer=True)
+    if isinstance(cnf, CNFPlus): solver = Minicard()
+    else: solver = Minisat22()
+    #else: solver = Solver(name='Cadical')
     solver.append_formula(cnf)
-    return solver.solve(), solver.get_model()
+    return solver.solve(), solver.get_model() 
 
 def _print_model(model: list[int], alphabet: str, k: int) -> None:
     """ Affiche un modèle"""
+    print([reverse(prop) for prop in model])
     print(f"states={_get_states_from_model(model, k)}")
     print(f"final_states={_get_final_states_from_model(model, k)}")
     print(f"transitions={_get_nd_transitions_from_model(model, alphabet, k)}")
@@ -312,8 +319,8 @@ def gen_autcard(alphabet: str, pos: list[str], neg: list[str], k: int, ell: int)
     return _gen_aut([_aut_is_deterministic], alphabet, pos, neg, k, cnfplus=True, ell=ell)
 
 # Q7
-def gen_autn(alphabet: str, pos: list[str], neg: list[str], k: int, **args) -> NFA:
-    return _gen_aut([], alphabet, pos, neg, k, FA="NFA", **args)
+def gen_autn(alphabet: str, pos: list[str], neg: list[str], k: int) -> NFA:
+    return _gen_aut([], alphabet, pos, neg, k, FA="NFA", verbose=True)
 
 ######################################################
 
@@ -326,5 +333,7 @@ def main():
     test_autn()
 
 if __name__ == '__main__':
-    #gen_autn("ab", ["aa"], ["a"], 2, verbose=True)
+    #gen_autn("ab", ["aa"], ["a"], 2)
+    #gen_autn("ab", ["a", "b", "aa", "ba", "bab", "aba"], ["ab", "bb"], 2)
+    #gen_autn("ab", ["a", "b", "aa", "ba", "bab"], ["ab", "bb"], 2)
     main()
