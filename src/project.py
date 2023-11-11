@@ -50,10 +50,11 @@ def __ac_states_are_in_aut(**args):
 
 def __transitions_are_valids(**args):
     """ Toutes les transitions sont valides """
-    for i in range(args["k"]):
-        for j in range(args["k"]):
+    for i in range(0, args["k"]):
+        for j in range(1, args["k"]):
             for l in args["alphabet"]:
-                yield [-t_id(i,j,l), p_id(i)]
+                # need optimization
+                if i!=0: yield [-t_id(i,j,l), p_id(i)]
                 if i == j: continue
                 yield [-t_id(i,j,l), p_id(j)]
 
@@ -102,6 +103,7 @@ def __all_exec_follow_transitions(**args):
         for x in range(len(w)):
             for i in range(args["k"]):
                 for j in range(args["k"]):
+                    if x == 0 and i!=0: continue
                     yield [-v_id(i, x, w), -t_id(i, j, w[x]), v_id(j, x+1, w)]
                     yield [-v_id(i, x, w), -v_id(j, x+1, w), t_id(i, j, w[x])]
 
@@ -114,6 +116,7 @@ def _aut_is_consistent(**args):
         __all_pos_exec_exists,
         __all_exec_follow_transitions,
     ]
+    #yield [t_id(0, 0, 'a')]
     for constraint in constraints:
         for clause in constraint(**args):
             yield clause
@@ -124,7 +127,7 @@ def __transitions_are_unique(**args):
         for x in range(args["k"]):
             for y in range(args["k"]):
                 for z in range(args["k"]):
-                    if y == z or x>y: continue
+                    if y==z or x>y: continue
                     yield [-t_id(x,y,l), -t_id(x,z,l)]
 
 def _aut_is_deterministic(**args):
@@ -163,12 +166,13 @@ def __all_exec_follow_reverse_transitions(**args):
         for x in range(len(w)):
             for i in range(args["k"]):
                 for j in range(args["k"]):
+                    if x == 0 and i!=0: continue
                     yield [-v_id(j, x, w), -t_id(j, i, w[x]), v_id(i, x+1, w)]
                     yield [-v_id(j, x, w), -v_id(i, x+1, w), t_id(j, i, w[x])]
 
 def _aut_is_reverse(**args):
     """ L'automate est réversible. """
-    for clause in _aut_is_consistent(**args, reverse=True):
+    for clause in __all_exec_follow_reverse_transitions(**args):
         yield clause
 
 #####################################################
@@ -278,8 +282,8 @@ def _gen_aut(constraints : list, alphabet: str, pos: list[str], neg: list[str], 
     cnf = _gen_cnf(constraints, alphabet, pos, neg, k, **args)
     result, model = _solve(cnf)
     if result and verbose(**args): _print_model(model, alphabet, k)
-    #show_automaton(_from_model_to_dfa(model, alphabet, k))
     fa = "NFA" if nfa(**args) else "DFA"
+    #if result: show_automaton(_from_model_to_fa(model, alphabet, k, FA=fa))
     return _from_model_to_fa(model, alphabet, k, FA=fa) if result else None
 
 ###############################################
@@ -308,9 +312,9 @@ def gen_autcard(alphabet: str, pos: list[str], neg: list[str], k: int, ell: int)
     return _gen_aut([_aut_is_deterministic], alphabet, pos, neg, k, cnfplus=True, ell=ell)
 
 # Q7
-def gen_autn(alphabet: str, pos: list[str], neg: list[str], k: int) -> NFA:
-    return _gen_aut([], alphabet, pos, neg, k, FA="NFA", verbose=False)
-    
+def gen_autn(alphabet: str, pos: list[str], neg: list[str], k: int, **args) -> NFA:
+    return _gen_aut([], alphabet, pos, neg, k, FA="NFA", **args)
+
 ######################################################
 
 def main():
@@ -322,6 +326,5 @@ def main():
     test_autn()
 
 if __name__ == '__main__':
-    #gen_autn('ab', ['abaa', 'baa', 'baaabba', 'baabbb', 'bab', 'babaa', 'babbab', 'babbb', 'bba', 'bbaa', 'bbab', 'bbabba', 'bbb', 'bbba', 'bbbab', 'bbbb', 'bbbba', 'bbbbab'],
-    #       ['', 'a', 'aa', 'aaa', 'b', 'ba', 'baaa', 'baaaa', 'baab', 'baba', 'bababb', 'babb', 'bb', 'bbaaa', 'bbaaba', 'bbabb', 'bbbabb'], 4)
+    #gen_autn("ab", ["aa"], ["a"], 2, verbose=True)
     main()
