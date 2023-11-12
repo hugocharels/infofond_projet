@@ -320,7 +320,7 @@ def gen_autcard(alphabet: str, pos: list[str], neg: list[str], k: int, ell: int)
 
 # Q7
 def gen_autn(alphabet: str, pos: list[str], neg: list[str], k: int) -> NFA:
-    return _gen_aut([], alphabet, pos, neg, k, FA="NFA", verbose=True)
+    return _gen_aut([], alphabet, pos, neg, k, FA="NFA")#, verbose=True)
 
 ######################################################
 
