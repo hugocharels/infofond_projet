@@ -43,13 +43,6 @@ x_id = lambda n, s, w: vpool.id((X_ID, n, s, w))
 def __source_in_aut(**args):
     """ La source est présente dans l'automate """
     yield [p_id(0)]
-    
-    #yield [p_id(1)]
-    #yield [t_id(0,1,'a')]
-    #yield [t_id(0,1,'b')]
-    #yield [t_id(1,1,'a')]
-    #yield [t_id(1,0,'a')]
-    #yield [t_id(1,0,'b')]
 
 def __ac_states_are_in_aut(**args):
     """ Tous les états acceptant sont dans l'automate """
@@ -64,12 +57,19 @@ def __transitions_are_valids(**args):
                 if i == j: continue
                 yield [-t_id(i,j,l), p_id(j)]
 
+def __all_states_has_transitions(**args):
+    """Il y a au moins une transition sortante ou entrante pour chaque état"""
+    yield [t_id(0, y, l) for y in range(args["k"]) for l in args["alphabet"]]
+    # for x in range(1, args["k"]):
+        # yield [t_id(y, x, l) for y in range(args["k"]) for l in args["alphabet"]]
+
 def _construction(**args):
     """ L'automate est construit de manière correcte. """
     constraints = [
         __source_in_aut,
         __ac_states_are_in_aut,
         __transitions_are_valids,
+        __all_states_has_transitions
     ]
     for constraint in constraints:
         for clause in constraint(**args):
@@ -101,7 +101,7 @@ def __all_pos_exec_exists(**args):
     for w in args["pos"]:
         for x in range(1, len(w)+1):
             yield [v_id(i, x, w) for i in range(args["k"])]
-        #yield [v_id(i, len(w), w) for i in range(args["k"])]
+        # yield [v_id(i, len(w), w) for i in range(args["k"])]
 
 def __all_exec_follow_transitions(**args):
     """ Toutes les exécutions suivent les transitions """
@@ -111,7 +111,7 @@ def __all_exec_follow_transitions(**args):
                 for j in range(args["k"]):
                     if x == 0 and i!=0: continue
                     yield [-v_id(i, x, w), -t_id(i, j, w[x]), v_id(j, x+1, w)]
-                    yield [-v_id(i, x, w), -v_id(j, x+1, w), t_id(i, j, w[x])]
+                    # yield [-v_id(i, x, w), -v_id(j, x+1, w), t_id(i, j, w[x])]
 
 def _aut_is_consistent(**args):
     """ L'automate est consistant."""
@@ -159,7 +159,7 @@ def _aut_is_complete(**args):
     """ L'automate est complet. """
     constraints = [
         __all_states_has_outgoing_transitions,
-        __all_states_has_incoming_transitions,
+        # __all_states_has_incoming_transitions,
     ]
     for constraint in constraints:
         for clause in constraint(**args):
@@ -263,7 +263,7 @@ def _solve(cnf: CNF) -> (bool, list[int]):
 
 def _print_model(model: list[int], alphabet: str, k: int) -> None:
     """ Affiche un modèle"""
-    print([reverse(prop) for prop in model])
+    # print([reverse(prop) for prop in model])
     print(f"states={_get_states_from_model(model, k)}")
     print(f"final_states={_get_final_states_from_model(model, k)}")
     print(f"transitions={_get_nd_transitions_from_model(model, alphabet, k)}")
@@ -299,7 +299,7 @@ def _gen_aut(constraints : list, alphabet: str, pos: list[str], neg: list[str], 
 
 # Q2
 def gen_aut(alphabet: str, pos: list[str], neg: list[str], k: int) -> DFA:
-    return _gen_aut([_aut_is_deterministic], alphabet, pos, neg, k)
+    return _gen_aut([_aut_is_deterministic], alphabet, pos, neg, k, verbose=True)
 
 # Q3
 def gen_minaut(alphabet: str, pos: list[str], neg: list[str], k: int=1) -> DFA:
@@ -326,11 +326,11 @@ def gen_autn(alphabet: str, pos: list[str], neg: list[str], k: int) -> NFA:
 
 def main():
     test_aut()
-    test_minaut()
-    test_autc()
-    test_autr()
-    test_autcard()
-    test_autn()
+    # test_minaut()
+    # test_autc()
+    # test_autr()
+    # test_autcard()
+    # test_autn()
 
 if __name__ == '__main__':
     #gen_autn("ab", ["aa"], ["a"], 2)
