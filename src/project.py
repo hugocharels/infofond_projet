@@ -5,351 +5,366 @@ from automata.fa.fa import FA
 from automata.fa.dfa import DFA
 from automata.fa.nfa import NFA
 
-from pysat.solvers import Minisat22, Minicard, Solver
+from pysat.solvers import Minisat22, Minicard
 from pysat.formula import CNF, CNFPlus, IDPool
 from pysat.card import CardEnc
 
 
-#################### VARIABLES ####################
+#########################
 
-vpool = IDPool(start_from=1)
+################### VARIABLES ####################
 
-P_ID = 0 # si l'état est présent dans l'automate
-A_ID = 1 # si l'état est accpetant
-T_ID = 2 # les transitions
-V_ID = 3 # les états visiter lors de l'éxécution
+class ID:
 
-# Pour transformation de Tseitin
-X_ID = 4
-Y_ID = 5
+	P = 0 # si l'état est présent dans l'automate
+	A = 1 # si l'état est accpetant
+	T = 2 # les transitions
+	V = 3 # les états visiter lors de l'éxécution
 
-# Est vrai si l'état n est présent dans l'automate
-p_id = lambda x: vpool.id((P_ID, x))
+	# Pour transformation de Tseitin
+	X = 4
+	Y = 5
 
-# Est vrai si l'état n est acceptant
-a_id = lambda x: vpool.id((A_ID, x))
+	vpool = IDPool(start_from=1)
 
-# Est vrai si la transition qui va de l'état i à j avec la lettre l existe
-t_id = lambda x, y, l: vpool.id((T_ID, x, y, l))
+	def __init__(self, id: int):
+		self.id = id
 
-# Est vrai si l'état n à été visité pour la ième lettre du mot w
-v_id = lambda x, i, w: vpool.id((V_ID, x, i, w))
+	def __str__(self):
+		string = ""
+		# TODO
+		return string
 
-x_id = lambda x, s, w: vpool.id((X_ID, x, s, w))
+	@staticmethod
+	def p(x): return ID.vpool.id((ID.P, x))
 
-y_id = lambda x, y, i, w: vpool.id((Y_ID, x, y, i, w))
+	@staticmethod
+	def a(x): return ID.vpool.id((ID.A, x))
 
-#####################################################
+	@staticmethod
+	def t(x, y, l): return ID.vpool.id((ID.T, x, y, l))
+
+	@staticmethod
+	def v(x, i, w): return ID.vpool.id((ID.V, x, i, w))
+
+	@staticmethod
+	def x(x, s, w): return ID.vpool.id((ID.X, x, s, w))
+
+	@staticmethod
+	def y(x, y, i, w): return ID.vpool.id((ID.Y, x, y, i, w))
+
+##################################################
+
+################### GENERATORS ###################
+
+class AutGenerator:
+
+	def __init__(self, alphabet: str, pos: list[str], neg: list[str], k: int):
+		self.alphabet = alphabet
+		self.pos = pos
+		self.neg = neg
+		self.k = k
+
+	########## CONSTRAINTS ##########
+
+	def _coherence(self):
+		"""
+		Yo
+		"""
+
+		# La source est dans l'automate
+		yield [ID.p(0)]
+
+		# Tous les états acceptants sont dans l'automate
+		for x in range(self.k):
+			yield [-ID.a(x), ID.p(x)]
+
+		# Toutes les transitions sont valides
+		for x in range(self.k):
+			for y in range(self.k):
+				for l in self.alphabet:
+					if x!=0: yield [-ID.t(x, y, l), ID.p(x)]
+					if x!=y: yield [-ID.t(x, y, l), ID.p(y)]
+
+		# Tous les états ont des transitions
+		yield [ID.t(0, y, l) for y in range(self.k) for l in self.alphabet]
+		for x in range(1, self.k):
+			yield [ID.t(y, x, l) for y in range(self.k) for l in self.alphabet]
+
+	def _consistence(self):
+		"""
+		Yo
+		"""
+
+		# Toutes les exécutions commencent uniquement à la source
+		for w in self.pos + self.neg:
+			yield [ID.v(0, 0, w)]
+			for x in range(1, self.k):
+				yield [-ID.v(x, 0, w)]
+
+		# Il existe une exécution acceptante pour tous les mots de pos
+		for w in self.pos:
+			yield [ID.x(x, len(w), w) for x in range(self.k)]
+			for x in range(self.k):
+				#yield [-ID.v(x, len(w), w), ID.a(x)]
+				yield [-ID.x(x, len(w), w), ID.v(x, len(w), w)]
+				yield [-ID.x(x, len(w), w), ID.a(x)]
+				yield [-ID.v(x, len(w), w), -ID.a(x), ID.x(x, len(w), w)]
+
+		# Il n'existe pas d'exécution acceptante pour tous les mots de neg
+		for w in self.neg:
+			for x in range(self.k):
+				yield [-ID.v(x, len(w), w), -ID.a(x)]
+
+		# Il existe une exec ??
+
+		# Les exécutions sont valides
+		for w in self.pos + self.neg:
+			for i in range(len(w)):
+				for x in range(self.k):
+					for y in range(self.k):
+						if i==0 and x!=0: continue
+						yield [-ID.v(x, i, w), -ID.t(x, y, w[i]), ID.v(y, i+1, w)]
+						#yield [-ID.v(x, i, w), -ID.v(y, i+1, w), ID.t(x, y, w[i])]
+
+		for w in self.pos + self.neg:
+			for i in range(len(w)):
+				for x in range(self.k):
+					yield [-ID.v(x, i+1, w)] + [ID.y(x, y, i, w) for y in range(self.k)]
+					for y in range(self.k):
+						yield [-ID.y(x, y, i, w), ID.t(y, x, w[i])]
+						yield [-ID.y(x, y, i, w), ID.v(y, i, w)]
+						yield [-ID.t(y, x, w[i]), -ID.v(y, i, w), ID.y(x, y, i, w)]
+
+	#################################
+
+	def _get_constraints(self) -> list:
+		return [
+			self._coherence,
+			self._consistence,
+		]
+
+	def _get_clauses(self):
+		for constraint in self._get_constraints():
+			for clause in constraint():
+				yield clause
+
+	def _generate(self, *args) -> CNF:
+		cnf = CNF() if "cnfplus" not in args else CNFPlus()
+		for clause in self._get_clauses():
+			cnf.append(clause)
+		return cnf
+
+	def _solve(self, cnf: CNF) -> tuple[bool, list[int]]:
+		solver = Minisat22() if not isinstance(cnf, CNFPlus) else Minicard()
+		solver.append_formula(cnf)
+		return solver.solve(), solver.get_model()
+
+	def generate(self, *args) -> list[int]:
+		cnf = self._generate(*args)
+		sat, model = self._solve(cnf)
+		if sat and "verbose" in args:
+			pass
+		return sat, model
 
 
-#################### CONSTRAINTS ####################
+class DetAutGenerator(AutGenerator):
 
-def __source_in_aut(**args):
-    """ La source est présente dans l'automate """
-    yield [p_id(0)]
+	def __init__(self, alphabet: str, pos: list[str], neg: list[str], k: int):
+		super().__init__(alphabet, pos, neg, k)
 
-def __ac_states_are_in_aut(**args):
-    """ Tous les états acceptant sont dans l'automate """
-    for x in range(args["k"]):
-        yield [-a_id(x), p_id(x)]
+	def _determinism(self):
+		"""
+		Yo
+		"""
 
-def __transitions_are_valids(**args):
-    """ Toutes les transitions sont valides """
-    for x in range(0, args["k"]):
-        for y in range(1, args["k"]):
-            for l in args["alphabet"]:
-                if x!=0: yield [-t_id(x, y, l), p_id(x)]
-                if x == y: continue
-                yield [-t_id(x, y, l), p_id(y)]
+		# 
+		for x in range(self.k):
+			for l in self.alphabet:
+				for y in range(self.k):
+					for z in range(self.k):
+						if y!=z: yield [-ID.t(x, y, l), -ID.t(x, z, l)]
 
-def __all_states_has_transitions(**args):
-    """"""
-    yield [t_id(0, y, l) for y in range(args["k"]) for l in args["alphabet"]]
-    for x in range(1, args["k"]):
-        yield [t_id(y, x, l) for y in range(args["k"]) for l in args["alphabet"]]
+	def _get_constraints(self) -> list:
+		return super()._get_constraints() + [
+			self._determinism,
+		]
 
-def _construction(**args):
-    """ L'automate est construit de manière correcte. """
-    constraints = [
-        __source_in_aut,
-        __ac_states_are_in_aut,
-        __transitions_are_valids,
-        __all_states_has_transitions
-    ]
-    for constraint in constraints:
-        for clause in constraint(**args):
-            yield clause
 
-def __all_exec_start_at_q0(**args):
-    """ Toutes les exécutions commencent à la source """
-    for w in args["pos"] + args["neg"]:
-        yield [v_id(0, 0, w)]
+class MinAutGenerator(DetAutGenerator):
 
-def __all_pos_exec_are_ac(**args):
-    """ Toutes les exécutions des mots de P sont acceptantes """
-    for w in args["pos"]:
-        yield [x_id(x, len(w), w) for x in range(args["k"])]
-        for x in range(args["k"]):
-            #yield [-v_id(x, len(w), w), a_id(x)]
-            yield [-x_id(x, len(w), w), v_id(x, len(w), w)]
-            yield [-x_id(x, len(w), w), a_id(x)]
-            yield [-v_id(x, len(w), w), -a_id(x), x_id(x, len(w), w)]
+	def __init__(self, alphabet: str, pos: list[str], neg: list[str]):
+		super().__init__(alphabet, pos, neg, 1)
 
-def __all_neg_exec_are_not_ac(**args):
-    """ Toutes les exécutions des mots de N sont non acceptantes """
-    for w in args["neg"]:
-        for x in range(args["k"]):
-            yield [-v_id(x, len(w), w), -a_id(x)]
+	def generate(self, *args) -> list[int]:
+		self.k += 1
+		sat, model = super().generate(*args)
+		return (sat, model, self.k) if sat else self.generate(*args)
 
-def __all_pos_exec_exists(**args):
-    """ Il existe une exécution pour chaque mot de P """
-    for w in args["pos"]:
-        for x in range(1, len(w)+1):
-            yield [v_id(i, x, w) for i in range(args["k"])]
-        #yield [v_id(i, len(w), w) for i in range(args["k"])]
 
-def __all_exec_follow_transitions(**args):
-    """ Toutes les exécutions suivent les transitions """
-    for w in args["pos"] + args["neg"]:
-        for i in range(len(w)):
-            for x in range(args["k"]):
-                for y in range(args["k"]):
-                    if i==0 and x!=0: continue
-                    yield [-v_id(x, i, w), -t_id(x, y, w[i]), v_id(y, i+1, w)]
-                    #yield [-v_id(x, i, w), -v_id(y, i+1, w), t_id(x, y, w[i])]
+class CompAutGenerator(DetAutGenerator):
 
-    for w in args["pos"] + args["neg"]:
-        for i in range(len(w)):
-            for x in range(args["k"]):
-                yield [-v_id(x, i+1, w)] + [y_id(x, y, i, w) for y in range(args["k"])]
-                for y in range(args["k"]):
-                    yield [-y_id(x, y, i, w), t_id(y, x, w[i])]
-                    yield [-y_id(x, y, i, w), v_id(y, i, w)]
-                    yield [-t_id(y, x, w[i]), -v_id(y, i, w), y_id(x, y, i, w)]
+	def __init__(self, alphabet: str, pos: list[str], neg: list[str], k: int):
+		super().__init__(alphabet, pos, neg, k)
 
-def _aut_is_consistent(**args):
-    """ L'automate est consistant."""
-    constraints = [
-        __all_exec_start_at_q0,
-        __all_neg_exec_are_not_ac,
-        __all_pos_exec_are_ac,
-        __all_pos_exec_exists,
-        __all_exec_follow_transitions,
-    ]
-    for constraint in constraints:
-        for clause in constraint(**args):
-            yield clause
+	def _completeness(self):
+		"""
+		Yo
+		"""
 
-def __transitions_are_unique(**args):
-    """ Chaque état ne peut avoir qu'au plus une transition par lettre de l'alphabet """
-    for l in args["alphabet"]:
-        for x in range(args["k"]):
-            for y in range(args["k"]):
-                for z in range(args["k"]):
-                    if y==z or x>y: continue
-                    yield [-t_id(x,y,l), -t_id(x,z,l)]
+		# 
+		for x in range(self.k):
+			for l in self.alphabet:
+				yield [ID.t(x, y, l) for y in range(self.k)]
 
-def _aut_is_deterministic(**args):
-    """ L'automate est fini  """
-    constraints = [
-        __transitions_are_unique,
-    ]
-    for constraint in constraints:
-        for clause in constraint(**args):
-            yield clause
+		# 
+		for x in range(self.k):
+			yield [ID.t(y, x, l) for y in range(self.k) for l in self.alphabet]
+			
 
-def __all_states_has_outgoing_transitions(**args):
-    """ Pour chaque état il y a une transition sortante pour chaque lettre de l'alphabet """
-    for i in range(args["k"]):
-        for l in args["alphabet"]:
-            yield [t_id(i, j, l) for j in range(args["k"])]
+	def _get_constraints(self) -> list:
+		return super()._get_constraints() + [
+			self._completeness,
+		]
 
-def __all_states_has_incoming_transitions(**args):
-    """ Pour chaque état il y a une transition entrante pour au moins une lettre de l'alphabet """
-    for i in range(args["k"]):
-        yield [t_id(j, i, l) for j in range(args["k"]) for l in args["alphabet"]]
 
-def _aut_is_complete(**args):
-    """ L'automate est complet. """
-    constraints = [
-        __all_states_has_outgoing_transitions,
-        __all_states_has_incoming_transitions,
-    ]
-    for constraint in constraints:
-        for clause in constraint(**args):
-            yield clause
+class RevAutGenerator(DetAutGenerator):
 
-def __all_exec_follow_reverse_transitions(**args):
-    """ Toutes les exécutions suivent les transitions inversées """
-    for w in args["pos"] + args["neg"]:
-        for i in range(len(w)):
-            for x in range(args["k"]):
-                for y in range(args["k"]):
-                    if i==0 and x!=0: continue
-                    yield [-v_id(y, i, w), -t_id(y, x, w[i]), v_id(x, i+1, w)]
-                    yield [-v_id(y, i, w), -v_id(x, i+1, w), t_id(y, x, w[i])]
+	def __init__(self, alphabet: str, pos: list[str], neg: list[str], k: int):
+		super().__init__(alphabet, pos, neg, k)
 
-def _aut_is_reverse(**args):
-    """ L'automate est réversible. """
-    for clause in __all_exec_follow_reverse_transitions(**args):
-        yield clause
+	def _reversibility(self):
+		"""
+		Yo
+		"""
 
-#####################################################
+		# 
+		for w in self.pos + self.neg:
+			for i in range(len(w)):
+				for x in range(self.k):
+					for y in range(self.k):
+						if i==0 and x!=0: continue
+						yield [-ID.v(y, i, w), -ID.t(y, x, w[i]), ID.v(x, i+1, w)]
+						yield [-ID.v(y, i, w), -ID.v(x, i+1, w), ID.t(y, x, w[i])]
 
-#################### MODEL -> DFA ####################
+	def _get_constraints(self) -> list:
+		return super()._get_constraints() + [
+			self._reversibility,
+		]
 
-def _from_model_to_fa(model: list[int], alphabet: str, k: int, FA="DFA") -> FA:
-    """ Convertit un modèle SAT en un DFA"""
-    return DFA (
-        states=_get_states_from_model(model, k),
-        input_symbols=set(alphabet),
-        transitions=_get_d_transitions_from_model(model, alphabet, k),
-        initial_state="q0",
-        final_states=_get_final_states_from_model(model, k),
-        allow_partial=True
-    ) if FA == "DFA" else \
-            NFA (
-        states=_get_states_from_model(model, k),
-        input_symbols=set(alphabet),
-        transitions=_get_nd_transitions_from_model(model, alphabet, k),
-        initial_state="q0",
-        final_states=_get_final_states_from_model(model, k)
-    )
+class CardAutGenerator(DetAutGenerator):
 
-def _get_states_from_model(model: list[int], k: int) -> set[int]:
-    """ Retourne l'ensemble des états présents dans le modèle"""
-    return {f"q{i}" for i in range(k) if p_id(i) in model}
+	def __init__(self, alphabet: str, pos: list[str], neg: list[str], k: int, ell: int):
+		super().__init__(alphabet, pos, neg, k)
+		self.ell = ell
 
-def _get_final_states_from_model(model: list[int], k) -> set[int]:
-    """ Retourne l'ensemble des états acceptants présents dans le modèle"""
-    return {f"q{i}" for i in range(k) if a_id(i) in model}
+	def _generate(self, *args) -> CNFPlus:
+		cnf = super()._generate("cnfplus", *args)
+		cnf.append([[ID.a(x) for x in range(self.k)], self.ell], is_atmost=True)
+		return cnf
 
-def _get_d_transitions_from_model(model: list[int], alphabet: str, k: int) -> dict[tuple[int, str], int]:
-    """ Retourne l'ensemble des transitions présentes dans le modèle"""
-    transitions = {f"q{i}" : dict() for i in range(k) if p_id(i) in model}
-    for i in range(k):
-        for j in range(k):
-            for l in alphabet:
-                if t_id(i, j, l) in model:
-                    transitions[f"q{i}"][l] = f"q{j}"
-    return transitions
+##################################################
 
-def _get_nd_transitions_from_model(model: list[int], alphabet: str, k: int) -> dict[tuple[int, {str}], int]:
-    """ Retourne l'ensemble des transitions présentes dans le modèle"""
-    transitions = {f"q{i}" : dict() for i in range(k) if p_id(i) in model}
-    for i in range(k):
-        for j in range(k):
-            for l in alphabet:
-                if t_id(i, j, l) in model:
-                    if l not in transitions[f"q{i}"]:
-                        transitions[f"q{i}"][l] = {f"q{j}"}
-                    else:
-                        transitions[f"q{i}"][l].add(f"q{j}")
-    return transitions
+#################### BUILDER #####################
 
-######################################################
+class AutBuilder:
 
-#################### UTILS ####################
+	def __init__(self, alphabet: str, pos: list[str], neg: list[str], k: int):
+		self.alphabet = alphabet
+		self.pos = pos
+		self.neg = neg
+		self.k = k
 
-verbose = lambda **args: "verbose" in args and args["verbose"]
-cnfplus = lambda **args: "cnfplus" in args and args["cnfplus"]
-nfa = lambda **args: "FA" in args and args["FA"]=="NFA"
+	def _get_states(self, model: list[int]) -> list[int]:
+		return {f"q{x}" for x in range(self.k) if ID.p(x) in model}
 
-def _gen_cnf(constraints: list, alphabet: str, pos: list[str], neg: list[str], k: int, **args) -> CNF:
-    """ Génère une CNF à partir d'une liste de contraintes"""
-    cnf = CNF() if not cnfplus(**args) else CNFPlus()
-    for constraint in constraints:
-        for clause in constraint(alphabet=alphabet, pos=pos, neg=neg, k=k, **args):
-            # print in a file
-            #print([reverse(prop) for prop in clause], file=open("output.txt", "a"))
-            cnf.append(clause)
-    if cnfplus(**args) and "ell" in args:
-        cnf.append([[a_id(i) for i in range(k)], args["ell"]], is_atmost=True)
-    return cnf
+	def _get_final_states(self, model: list[int]) -> list[int]:
+		return {f"q{x}" for x in range(self.k) if ID.a(x) in model}
 
-def _solve(cnf: CNF) -> (bool, list[int]):
-    """ Résoud une CNF"""
-    if isinstance(cnf, CNFPlus): solver = Minicard()
-    else: solver = Minisat22()
-    #else: solver = Solver(name='Cadical')
-    solver.append_formula(cnf)
-    return solver.solve(), solver.get_model() 
+	def _get_d_transitions(self, model: list[int]) -> dict[int, dict[str, int]]:
+		transitions = {f"q{x}" : dict() for x in range(self.k) if ID.p(x) in model}
+		for x in range(self.k):
+			for y in range(self.k):
+				for l in self.alphabet:
+					if ID.t(x, y, l) in model:
+						transitions[f"q{x}"][l] = f"q{y}"
+		return transitions
 
-def _print_model(model: list[int], alphabet: str, k: int) -> None:
-    """ Affiche un modèle"""
-    print([reverse(prop) for prop in model])
-    print(f"states={_get_states_from_model(model, k)}")
-    print(f"final_states={_get_final_states_from_model(model, k)}")
-    print(f"transitions={_get_nd_transitions_from_model(model, alphabet, k)}")
+	def _get_nd_transitions(self, model: list[int]) -> dict[int, dict[str, list[int]]]:
+		transitions = {f"q{x}" : dict() for x in range(self.k) if ID.p(x) in model}
+		for x in range(self.k):
+			for y in range(self.k):
+				for l in self.alphabet:
+					if ID.t(x, y, l) in model:
+						if l not in transitions[f"q{x}"]:
+							transitions[f"q{x}"][l] = {f"q{y}"}
+						else:
+							transitions[f"q{x}"][l].add(f"q{y}")
+		return transitions
 
-def reverse(v: int) -> tuple:
-    """ Retourne la variable sous forme de tuple """
-    tup = vpool.obj(v) if vpool.obj(v) is not None else vpool.obj(-v)
-    ret = "" if v > 0 else "-"
-    if tup[0] == P_ID: ret += f"p[{tup[1]}]"
-    elif tup[0] == A_ID: ret += f"a[{tup[1]}]"
-    elif tup[0] == T_ID: ret += f"t[{tup[1]},{tup[2]},{tup[3]}]"
-    elif tup[0] == V_ID: ret += f"v[{tup[1]},{tup[2]},{tup[3]}]"
-    elif tup[0] == X_ID: ret += f"x[{tup[1]},{tup[2]},{tup[3]}]"
-    elif tup[0] == Y_ID: ret += f"y[{tup[1]},{tup[2]},{tup[3]},{tup[4]}]"
-    return ret
+	def _get_transitions(self, model: list[int], *args):
+		return self._get_nd_transitions(model) if "nfa" else self._get_d_transitions(model)
 
-def _gen_aut(constraints : list, alphabet: str, pos: list[str], neg: list[str], k: int, **args) -> DFA:
-    """ Génère un automate à partir d'une liste de contraintes"""
-    constraints = [
-        _construction,
-        _aut_is_consistent,
-    ] + constraints
-    if verbose(**args): print(f"-----------------------------------------\nE={set(alphabet)}, P={pos}, N={neg}, k={k}")
-    cnf = _gen_cnf(constraints, alphabet, pos, neg, k, **args)
-    result, model = _solve(cnf)
-    if result and verbose(**args): _print_model(model, alphabet, k)
-    fa = "NFA" if nfa(**args) else "DFA"
-    #if result: show_automaton(_from_model_to_fa(model, alphabet, k, FA=fa))
-    return _from_model_to_fa(model, alphabet, k, FA=fa) if result else None
+	def build(self, model: list[int], *args) -> FA:
+		return DFA (
+			states=self._get_states(model),
+			input_symbols=set(self.alphabet),
+			transitions=self._get_transitions(model, *args),
+			initial_state="q0",
+			final_states=self._get_final_states(model),
+			allow_partial=True
+		) if FA == "DFA" else \
+				NFA (
+			states=self._get_states(model),
+			input_symbols=set(self.alphabet),
+			transitions=self._get_transitions(model, *args),
+			initial_state="q0",
+			final_states=self._get_final_states(model)
+		)
 
-###############################################
+##################################################
 
-#################### QUESTIONS ####################
+################### QUESTIONS ####################
 
 # Q2
 def gen_aut(alphabet: str, pos: list[str], neg: list[str], k: int) -> DFA:
-    return _gen_aut([_aut_is_deterministic], alphabet, pos, neg, k)#, verbose=True)
+	sat, result = DetAutGenerator(alphabet, pos, neg, k).generate()
+	return AutBuilder(alphabet, pos, neg, k).build(result) if sat else None
 
 # Q3
-def gen_minaut(alphabet: str, pos: list[str], neg: list[str], k: int=1) -> DFA:
-    aut = gen_aut(alphabet, pos, neg, k)
-    return aut if aut is not None else gen_minaut(alphabet, pos, neg, k+1)
+def gen_minaut(alphabet: str, pos: list[str], neg: list[str]) -> DFA:
+	sat, result, k = MinAutGenerator(alphabet, pos, neg).generate("verbose")
+	return AutBuilder(alphabet, pos, neg, k).build(result) if sat else None
 
 # Q4
 def gen_autc(alphabet: str, pos: list[str], neg: list[str], k: int) -> DFA:
-    return _gen_aut([_aut_is_deterministic, _aut_is_complete], alphabet, pos, neg, k)
+	sat, result = CompAutGenerator(alphabet, pos, neg, k).generate()
+	return AutBuilder(alphabet, pos, neg, k).build(result) if sat else None
 
 # Q5
 def gen_autr(alphabet: str, pos: list[str], neg: list[str], k: int) -> DFA:
-    return _gen_aut([_aut_is_deterministic, _aut_is_reverse], alphabet, pos, neg, k)
+	sat, result = RevAutGenerator(alphabet, pos, neg, k).generate()
+	return AutBuilder(alphabet, pos, neg, k).build(result) if sat else None
 
 # Q6
 def gen_autcard(alphabet: str, pos: list[str], neg: list[str], k: int, ell: int) -> DFA:
-    return _gen_aut([_aut_is_deterministic], alphabet, pos, neg, k, cnfplus=True, ell=ell)
-
+	sat, result = CardAutGenerator(alphabet, pos, neg, k, ell).generate()
+	return AutBuilder(alphabet, pos, neg, k).build(result) if sat else None
+	
 # Q7
 def gen_autn(alphabet: str, pos: list[str], neg: list[str], k: int) -> NFA:
-    return _gen_aut([], alphabet, pos, neg, k, FA="NFA")#, verbose=True)
+	sat, result = AutGenerator(alphabet, pos, neg, k).generate()
+	return AutBuilder(alphabet, pos, neg, k).build(result) if sat else None
 
-######################################################
+##################################################
 
 def main():
-    test_aut()
-    test_minaut()
-    test_autc()
-    test_autr()
-    test_autcard()
-    test_autn()
+	test_aut()
+	test_minaut()
+	test_autc()
+	test_autr()
+	test_autcard()
+	test_autn()
 
 if __name__ == '__main__':
-    #gen_aut('a',  ['', 'aa', 'aaaaaa'], ['a', 'aaa', 'aaaaa'], 2)
-    #gen_autn("ab", ["aa"], ["a"], 2)
-    #gen_autn("ab", ["a", "b", "aa", "ba", "bab", "aba"], ["ab", "bb"], 2)
-    #gen_autn("ab", ["a", "b", "aa", "ba", "bab"], ["ab", "bb"], 2)
-    main()
+	main()
