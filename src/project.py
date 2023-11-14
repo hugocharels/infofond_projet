@@ -60,8 +60,8 @@ def __transitions_are_valids(**args):
 def __all_states_has_transitions(**args):
     """Il y a au moins une transition sortante ou entrante pour chaque état"""
     yield [t_id(0, y, l) for y in range(args["k"]) for l in args["alphabet"]]
-    # for x in range(1, args["k"]):
-        # yield [t_id(y, x, l) for y in range(args["k"]) for l in args["alphabet"]]
+    for x in range(1, args["k"]):
+        yield [t_id(y, x, l) for y in range(args["k"]) for l in args["alphabet"]]
 
 def _construction(**args):
     """ L'automate est construit de manière correcte. """
@@ -69,7 +69,7 @@ def _construction(**args):
         __source_in_aut,
         __ac_states_are_in_aut,
         __transitions_are_valids,
-        __all_states_has_transitions
+        # __all_states_has_transitions
     ]
     for constraint in constraints:
         for clause in constraint(**args):
@@ -111,7 +111,7 @@ def __all_exec_follow_transitions(**args):
                 for j in range(args["k"]):
                     if x == 0 and i!=0: continue
                     yield [-v_id(i, x, w), -t_id(i, j, w[x]), v_id(j, x+1, w)]
-                    # yield [-v_id(i, x, w), -v_id(j, x+1, w), t_id(i, j, w[x])]
+                    yield [-v_id(i, x, w), -v_id(j, x+1, w), t_id(i, j, w[x])]
 
 def _aut_is_consistent(**args):
     """ L'automate est consistant."""
@@ -299,7 +299,7 @@ def _gen_aut(constraints : list, alphabet: str, pos: list[str], neg: list[str], 
 
 # Q2
 def gen_aut(alphabet: str, pos: list[str], neg: list[str], k: int) -> DFA:
-    return _gen_aut([_aut_is_deterministic], alphabet, pos, neg, k, verbose=True)
+    return _gen_aut([_aut_is_deterministic], alphabet, pos, neg, k)#, verbose=True)
 
 # Q3
 def gen_minaut(alphabet: str, pos: list[str], neg: list[str], k: int=1) -> DFA:
