@@ -86,11 +86,6 @@ class AutGenerator:
 					if x!=0: yield [-ID.t(x, y, l), ID.p(x)]
 					if x!=y: yield [-ID.t(x, y, l), ID.p(y)]
 
-		# Tous les états ont des transitions
-		yield [ID.t(0, y, l) for y in range(self.k) for l in self.alphabet]
-		for x in range(1, self.k):
-			yield [ID.t(y, x, l) for y in range(self.k) for l in self.alphabet]
-
 	def _consistence(self):
 		"""
 		Yo
