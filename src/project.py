@@ -113,6 +113,12 @@ def __all_exec_follow_transitions(**args):
                     yield [-v_id(i, x, w), -t_id(i, j, w[x]), v_id(j, x+1, w)]
                     yield [-v_id(i, x, w), -v_id(j, x+1, w), t_id(i, j, w[x])]
 
+    for w in args["pos"] + args["neg"]:
+        for x in range(len(w)):
+            for i in range(args["k"]):
+                for j in range(args["k"]):
+                    ...
+
 def _aut_is_consistent(**args):
     """ L'automate est consistant."""
     constraints = [
