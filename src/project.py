@@ -19,21 +19,25 @@ A_ID = 1 # si l'état est accpetant
 T_ID = 2 # les transitions
 V_ID = 3 # les états visiter lors de l'éxécution
 
+# Pour transformation de Tseitin
 X_ID = 4
+Y_ID = 5
 
 # Est vrai si l'état n est présent dans l'automate
-p_id = lambda n: vpool.id((P_ID, n))
+p_id = lambda x: vpool.id((P_ID, x))
 
 # Est vrai si l'état n est acceptant
-a_id = lambda n: vpool.id((A_ID, n))
+a_id = lambda x: vpool.id((A_ID, x))
 
 # Est vrai si la transition qui va de l'état i à j avec la lettre l existe
-t_id = lambda i, j, l: vpool.id((T_ID, i, j, l))
+t_id = lambda x, y, l: vpool.id((T_ID, x, y, l))
 
 # Est vrai si l'état n à été visité pour la ième lettre du mot w
-v_id = lambda n, i, w: vpool.id((V_ID, n, i, w))
+v_id = lambda x, i, w: vpool.id((V_ID, x, i, w))
 
-x_id = lambda n, s, w: vpool.id((X_ID, n, s, w))
+x_id = lambda x, s, w: vpool.id((X_ID, x, s, w))
+
+y_id = lambda x, y, i, w: vpool.id((Y_ID, x, y, i, w))
 
 #####################################################
 
@@ -43,26 +47,26 @@ x_id = lambda n, s, w: vpool.id((X_ID, n, s, w))
 def __source_in_aut(**args):
     """ La source est présente dans l'automate """
     yield [p_id(0)]
-    
-    #yield [p_id(1)]
-    #yield [t_id(0,1,'a')]
-    #yield [t_id(0,1,'b')]
-    #yield [t_id(1,1,'a')]
-    #yield [t_id(1,0,'a')]
-    #yield [t_id(1,0,'b')]
 
 def __ac_states_are_in_aut(**args):
     """ Tous les états acceptant sont dans l'automate """
-    for n in range(args["k"]): yield [-a_id(n), p_id(n)]
+    for x in range(args["k"]):
+        yield [-a_id(x), p_id(x)]
 
 def __transitions_are_valids(**args):
     """ Toutes les transitions sont valides """
-    for i in range(0, args["k"]):
-        for j in range(1, args["k"]):
+    for x in range(0, args["k"]):
+        for y in range(1, args["k"]):
             for l in args["alphabet"]:
-                if i!=0: yield [-t_id(i,j,l), p_id(i)]
-                if i == j: continue
-                yield [-t_id(i,j,l), p_id(j)]
+                if x!=0: yield [-t_id(x, y, l), p_id(x)]
+                if x == y: continue
+                yield [-t_id(x, y, l), p_id(y)]
+
+def __all_states_has_transitions(**args):
+    """"""
+    yield [t_id(0, y, l) for y in range(args["k"]) for l in args["alphabet"]]
+    for x in range(1, args["k"]):
+        yield [t_id(y, x, l) for y in range(args["k"]) for l in args["alphabet"]]
 
 def _construction(**args):
     """ L'automate est construit de manière correcte. """
@@ -70,6 +74,7 @@ def _construction(**args):
         __source_in_aut,
         __ac_states_are_in_aut,
         __transitions_are_valids,
+        __all_states_has_transitions
     ]
     for constraint in constraints:
         for clause in constraint(**args):
@@ -83,18 +88,18 @@ def __all_exec_start_at_q0(**args):
 def __all_pos_exec_are_ac(**args):
     """ Toutes les exécutions des mots de P sont acceptantes """
     for w in args["pos"]:
-        yield [x_id(n, len(w), w) for n in range(args["k"])]
-        for n in range(args["k"]):
-            #yield [-v_id(n, len(w), w), a_id(n)]
-            yield [-x_id(n, len(w), w), v_id(n, len(w), w)]
-            yield [-x_id(n, len(w), w), a_id(n)]
-            yield [-v_id(n, len(w), w), -a_id(n), x_id(n, len(w), w)]
+        yield [x_id(x, len(w), w) for x in range(args["k"])]
+        for x in range(args["k"]):
+            #yield [-v_id(x, len(w), w), a_id(x)]
+            yield [-x_id(x, len(w), w), v_id(x, len(w), w)]
+            yield [-x_id(x, len(w), w), a_id(x)]
+            yield [-v_id(x, len(w), w), -a_id(x), x_id(x, len(w), w)]
 
 def __all_neg_exec_are_not_ac(**args):
     """ Toutes les exécutions des mots de N sont non acceptantes """
     for w in args["neg"]:
-        for n in range(args["k"]):
-            yield [-v_id(n, len(w), w), -a_id(n)]
+        for x in range(args["k"]):
+            yield [-v_id(x, len(w), w), -a_id(x)]
 
 def __all_pos_exec_exists(**args):
     """ Il existe une exécution pour chaque mot de P """
@@ -106,12 +111,21 @@ def __all_pos_exec_exists(**args):
 def __all_exec_follow_transitions(**args):
     """ Toutes les exécutions suivent les transitions """
     for w in args["pos"] + args["neg"]:
-        for x in range(len(w)):
-            for i in range(args["k"]):
-                for j in range(args["k"]):
-                    if x == 0 and i!=0: continue
-                    yield [-v_id(i, x, w), -t_id(i, j, w[x]), v_id(j, x+1, w)]
-                    yield [-v_id(i, x, w), -v_id(j, x+1, w), t_id(i, j, w[x])]
+        for i in range(len(w)):
+            for x in range(args["k"]):
+                for y in range(args["k"]):
+                    if i==0 and x!=0: continue
+                    yield [-v_id(x, i, w), -t_id(x, y, w[i]), v_id(y, i+1, w)]
+                    #yield [-v_id(x, i, w), -v_id(y, i+1, w), t_id(x, y, w[i])]
+
+    for w in args["pos"] + args["neg"]:
+        for i in range(len(w)):
+            for x in range(args["k"]):
+                yield [-v_id(x, i+1, w)] + [y_id(x, y, i, w) for y in range(args["k"])]
+                for y in range(args["k"]):
+                    yield [-y_id(x, y, i, w), t_id(y, x, w[i])]
+                    yield [-y_id(x, y, i, w), v_id(y, i, w)]
+                    yield [-t_id(y, x, w[i]), -v_id(y, i, w), y_id(x, y, i, w)]
 
 def _aut_is_consistent(**args):
     """ L'automate est consistant."""
@@ -168,12 +182,12 @@ def _aut_is_complete(**args):
 def __all_exec_follow_reverse_transitions(**args):
     """ Toutes les exécutions suivent les transitions inversées """
     for w in args["pos"] + args["neg"]:
-        for x in range(len(w)):
-            for i in range(args["k"]):
-                for j in range(args["k"]):
-                    if x == 0 and i!=0: continue
-                    yield [-v_id(j, x, w), -t_id(j, i, w[x]), v_id(i, x+1, w)]
-                    yield [-v_id(j, x, w), -v_id(i, x+1, w), t_id(j, i, w[x])]
+        for i in range(len(w)):
+            for x in range(args["k"]):
+                for y in range(args["k"]):
+                    if i==0 and x!=0: continue
+                    yield [-v_id(y, i, w), -t_id(y, x, w[i]), v_id(x, i+1, w)]
+                    yield [-v_id(y, i, w), -v_id(x, i+1, w), t_id(y, x, w[i])]
 
 def _aut_is_reverse(**args):
     """ L'automate est réversible. """
@@ -277,6 +291,7 @@ def reverse(v: int) -> tuple:
     elif tup[0] == T_ID: ret += f"t[{tup[1]},{tup[2]},{tup[3]}]"
     elif tup[0] == V_ID: ret += f"v[{tup[1]},{tup[2]},{tup[3]}]"
     elif tup[0] == X_ID: ret += f"x[{tup[1]},{tup[2]},{tup[3]}]"
+    elif tup[0] == Y_ID: ret += f"y[{tup[1]},{tup[2]},{tup[3]},{tup[4]}]"
     return ret
 
 def _gen_aut(constraints : list, alphabet: str, pos: list[str], neg: list[str], k: int, **args) -> DFA:
@@ -299,7 +314,7 @@ def _gen_aut(constraints : list, alphabet: str, pos: list[str], neg: list[str], 
 
 # Q2
 def gen_aut(alphabet: str, pos: list[str], neg: list[str], k: int) -> DFA:
-    return _gen_aut([_aut_is_deterministic], alphabet, pos, neg, k)
+    return _gen_aut([_aut_is_deterministic], alphabet, pos, neg, k)#, verbose=True)
 
 # Q3
 def gen_minaut(alphabet: str, pos: list[str], neg: list[str], k: int=1) -> DFA:
@@ -333,6 +348,7 @@ def main():
     test_autn()
 
 if __name__ == '__main__':
+    #gen_aut('a',  ['', 'aa', 'aaaaaa'], ['a', 'aaa', 'aaaaa'], 2)
     #gen_autn("ab", ["aa"], ["a"], 2)
     #gen_autn("ab", ["a", "b", "aa", "ba", "bab", "aba"], ["ab", "bb"], 2)
     #gen_autn("ab", ["a", "b", "aa", "ba", "bab"], ["ab", "bb"], 2)
