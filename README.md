@@ -48,7 +48,7 @@
 	
 	$\bigwedge\limits_{w\in P \cup N} \bigwedge\limits_{i=0}^{|w|-1}\bigwedge\limits_{x=0}^{k} \bigwedge\limits_{y=0}^{k} \lnot v_{x,i,w} \lor \lnot t_{x,y,w[i]} \lor v_{y,i+1,w}$
 
-5. Un état ne peut être visité que s’il existe un état précédent qui est également visité et qu’il y a une transition qui lie les deux états
+5. Un état ne peut être visité que s’il existe un état précédent qui est également visité et qu’il y a une transition qui lie les deux états.  
 	$\bigwedge\limits_{w\in P \cup N}\bigwedge\limits_{i=0}^{|w|-1}\bigwedge\limits_{x=0}^{k} v_{x,i+1,w} \rightarrow \bigvee\limits_{y=0}^{k} t_{y,x,w[i]} \land v_{y,i,w}$
 	
 	$\bigwedge\limits_{w\in P \cup N}\bigwedge\limits_{i=0}^{|w|-1}\bigwedge\limits_{x=0}^{k} \bigvee\limits_{y=0}^{k} \lnot v_{x,i+1,w} \lor (t_{y,x,w[i]} \land v_{y,i,w})$
@@ -58,7 +58,7 @@
 
 ### Déterminisme
 
-1. Les transitions sont unique.
+1. Les transitions sont unique.  
 	$\bigwedge\limits_{l\in \Sigma} \bigwedge\limits_{x=0}^{k}\bigwedge\limits_{y=0}^{k} t_{x,y,l} \rightarrow \lnot \bigvee\limits_{z=0, y\neq z}^{k} t_{x,z,l}$
 	
 	$\bigwedge\limits_{l\in \Sigma} \bigwedge\limits_{x=0}^{k}\bigwedge\limits_{y=0}^{k} \lnot t_{x,y,l} \lor \lnot \bigvee\limits_{z=0, y\neq z}^{k} t_{x,z,l}$
