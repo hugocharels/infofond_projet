@@ -14,41 +14,47 @@
 	$p_{0}$
 
 2. Tous les états acceptants font partie de l'automate.  
-	$\bigwedge\limits_{n=0}^{k}a_{n}\rightarrow p_{n}$
+	$\bigwedge\limits_{x=0}^{k}a_{x}\rightarrow p_{x}$
 	
-	$\bigwedge\limits_{n=0}^{k} \lnot a_{n} \lor p_{n}$
+	$\bigwedge\limits_{x=0}^{k} \lnot a_{x} \lor p_{x}$
 
 3. Toutes les transitions sont valides.  
-	$\bigwedge\limits_{i=0}^{k}\bigwedge\limits_{j=0}^{k}\bigwedge\limits_{l\in\Sigma} t_{i,j,l} \rightarrow p_{i} \land p_{j}$
+	$\bigwedge\limits_{x=0}^{k}\bigwedge\limits_{y=0}^{k}\bigwedge\limits_{l\in\Sigma} t_{x,y,l} \rightarrow p_{x} \land p_{y}$
 	
-	$\bigwedge\limits_{i=0}^{k}\bigwedge\limits_{j=0}^{k}\bigwedge\limits_{l\in\Sigma} \lnot t_{i,j,l} \lor (p_{i} \land p_{j})$
+	$\bigwedge\limits_{x=0}^{k}\bigwedge\limits_{y=0}^{k}\bigwedge\limits_{l\in\Sigma} \lnot t_{x,y,l} \lor (p_{x} \land p_{y})$
 	
-	$\bigwedge\limits_{i=0}^{k}\bigwedge\limits_{j=0}^{k}\bigwedge\limits_{l\in\Sigma} (\lnot t_{i,j,l} \lor p_{i}) \land (\lnot t_{i,j,l} \lor p_{j})$
+	$\bigwedge\limits_{x=0}^{k}\bigwedge\limits_{y=0}^{k}\bigwedge\limits_{l\in\Sigma} (\lnot t_{x,y,l} \lor p_{x}) \land (\lnot t_{x,y,l} \lor p_{y})$
 
 ### Consistance
 
-1.  Toutes les exécutions commencent à la source.  
-	$\bigwedge\limits_{w\in P \cup N} v_{0,0, w}$
+1.  Toutes les exécutions commencent uniquement à la source.  
+	$\bigwedge\limits_{w\in P \cup N} v_{0,0, w} \land \bigwedge\limits_{x=1}^{k} \lnot v_{x,0,w}$
 
 2. Il existe une exécution acceptante pour tous les mots de $P$.  
-	$\bigwedge\limits_{w \in P}\bigvee\limits_{n=0}^{k} v_{n, |w|, w} \land a_{n}$ 
+	$\bigwedge\limits_{w \in P}\bigvee\limits_{x=0}^{k} v_{x, |w|, w} \land a_{x}$
+	
+	FNC avec Tseitin
+	#TODO 
 
 3. Il n'existe pas d'exécution acceptante pour tous les mots de $N$.  
-	$\bigwedge\limits_{w \in N} \lnot \bigvee\limits_{n=0}^{k} v_{n, |w|, w}  \land a_{n}$
-		
-	$\bigwedge\limits_{w \in N}\bigwedge\limits_{n=0}^{k} \lnot v_{n, |w|, w} \lor \lnot a_{n}$
+	$\bigwedge\limits_{w \in N} \lnot \bigvee\limits_{x=0}^{k} v_{x, |w|, w}  \land a_{x}$
+	
+	$\bigwedge\limits_{w \in N}\bigwedge\limits_{x=0}^{k} \lnot v_{x, |w|, w} \lor \lnot a_{x}$
 
-4.  Il doit existé au moins une exécution pour chaque mot de $P$.  
-	$\bigwedge\limits_{w\in P} \bigwedge\limits_{x=0}^{|w|}\bigvee\limits_{i=0}^{k} v_{i,x,w}$
+4. Un état est visité s'il y a une transition qui va de l'état visité précédent avec la lettre actuelle vers cet état.  
+	$\bigwedge\limits_{w\in P \cup N} \bigwedge\limits_{i=0}^{|w|-1}\bigwedge\limits_{x=0}^{k} v_{x,i,w} \rightarrow \bigwedge\limits_{y=0}^{k} t_{x,y,w[i]} \rightarrow v_{y,i+1,w}$
+	
+	$\bigwedge\limits_{w\in P \cup N} \bigwedge\limits_{i=0}^{|w|-1}\bigwedge\limits_{x=0}^{k} \lnot v_{x,i,w} \lor \bigwedge\limits_{y=0}^{k} \lnot t_{x,y,w[i]} \lor v_{y,i+1,w}$
+	
+	$\bigwedge\limits_{w\in P \cup N} \bigwedge\limits_{i=0}^{|w|-1}\bigwedge\limits_{x=0}^{k} \bigwedge\limits_{y=0}^{k} \lnot v_{x,i,w} \lor \lnot t_{x,y,w[i]} \lor v_{y,i+1,w}$
 
-5. Un état est visité s'il y a une transition qui va de l'état visité précédent avec la lettre actuelle vers cet état.  
-	$\bigwedge\limits_{w\in P \cup N} \bigwedge\limits_{x=0}^{|w|-1}\bigwedge\limits_{i=0}^{k} v_{i,x,w} \rightarrow \bigwedge\limits_{j=0}^{k} v_{j,x+1,w} \leftrightarrow t_{i,j,w[x]}$
+5. Un état ne peut être visité que s’il existe un état précédent qui est également visité et qu’il y a une transition qui lie les deux états
+	$\bigwedge\limits_{w\in P \cup N}\bigwedge\limits_{i=0}^{|w|-1}\bigwedge\limits_{x=0}^{k} v_{x,i+1,w} \rightarrow \bigvee\limits_{y=0}^{k} t_{y,x,w[i]} \land v_{y,i,w}$
 	
-	$\bigwedge\limits_{w\in P \cup N} \bigwedge\limits_{x=0}^{|w|-1}\bigwedge\limits_{i=0}^{k} \lnot v_{i,x,w} \lor\bigwedge\limits_{j=0}^{k} (v_{j,x+1,w} \rightarrow t_{i,j,w[x]}) \land (\lnot t_{i,j,w[x]} \rightarrow v_{j,x+1,w})$
+	$\bigwedge\limits_{w\in P \cup N}\bigwedge\limits_{i=0}^{|w|-1}\bigwedge\limits_{x=0}^{k} \bigvee\limits_{y=0}^{k} \lnot v_{x,i+1,w} \lor (t_{y,x,w[i]} \land v_{y,i,w})$
 	
-	$\bigwedge\limits_{w\in P \cup N} \bigwedge\limits_{x=0}^{|w|-1}\bigwedge\limits_{i=0}^{k} \lnot v_{i,x,w} \lor \bigwedge\limits_{j=0}^{k} (\lnot v_{j,x+1,w} \lor t_{i,j,w[x]}) \land (\lnot t_{i,j,w[x]} \lor v_{j,x+1,w})$
-	
-	$\bigwedge\limits_{w\in P \cup N} \bigwedge\limits_{x=0}^{|w|-1}\bigwedge\limits_{i=0}^{k} \bigwedge\limits_{j=0}^{k} (\lnot v_{i,x,w} \lor \lnot v_{j,x+1,w} \lor t_{i,j,w[x]}) \land (\lnot v_{i,x,w} \lor \lnot t_{i,j,w[x]} \lor v_{j,x+1,w})$
+	FNC avec Tseitin
+	#TODO 
 
 ### Déterminisme
 
@@ -63,11 +69,11 @@
 
 ### Complétude
 
-1.  Pour chaque état il dois existé une transition sortante pour chaque lettre de l'alphabet. *(la contrainte 1 est incluse dans celle ci.)*  
-	$\bigwedge\limits_{l\in \Sigma}\bigwedge\limits_{i=0}^{k}\bigvee\limits_{j=0}^{k} t_{i,j,l}$
+1.  Pour chaque état il dois existé une transition sortante pour chaque lettre de l'alphabet.  
+	$\bigwedge\limits_{l\in \Sigma}\bigwedge\limits_{x=0}^{k}\bigvee\limits_{y=0}^{k} t_{x,y,l}$
 
 2. Pour chaque état il doit existé une transition entrante.  
-	$\bigwedge\limits_{i=0}^{k}\bigvee\limits_{j=0}^{k}\bigvee\limits_{l\in \Sigma} t_{j,i,l}$
+	$\bigwedge\limits_{x=1}^{k}\bigvee\limits_{y=0}^{k}\bigvee\limits_{l\in \Sigma} t_{y,x,l}$
 
 ### Réversibilité
 
