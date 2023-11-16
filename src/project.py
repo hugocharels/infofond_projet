@@ -16,10 +16,10 @@ from pysat.card import CardEnc
 
 class ID:
 
-	P = 0 # si l'état est présent dans l'automate
-	A = 1 # si l'état est accpetant
+	P = 0 # les états présents
+	A = 1 # les états acceptants
 	T = 2 # les transitions
-	V = 3 # les états visiter lors de l'éxécution
+	V = 3 # les états visiter lors de l'exécution
 
 	# Pour transformation de Tseitin
 	X = 4
@@ -31,21 +31,35 @@ class ID:
 		self.id = id
 
 	def __str__(self):
-		string = ""
-		# TODO
+		tup = vpool.obj(v) if vpool.obj(v) is not None else vpool.obj(-v)
+		ret = "" if v > 0 else "-"
+		if   tup[0] == P_ID: ret += f"p[{tup[1]}]"
+		elif tup[0] == A_ID: ret += f"a[{tup[1]}]"
+		elif tup[0] == T_ID: ret += f"t[{tup[1]},{tup[2]},{tup[3]}]"
+		elif tup[0] == V_ID: ret += f"v[{tup[1]},{tup[2]},{tup[3]}]"
+		elif tup[0] == X_ID: ret += f"x[{tup[1]},{tup[2]},{tup[3]}]"
+		elif tup[0] == Y_ID: ret += f"y[{tup[1]},{tup[2]},{tup[3]},{tup[4]}]"
 		return string
 
 	@staticmethod
-	def p(x): return ID.vpool.id((ID.P, x))
+	def p(x: int):
+		""" Si l'état 'x' est présent dans l'automate """
+		return ID.vpool.id((ID.P, x))
 
 	@staticmethod
-	def a(x): return ID.vpool.id((ID.A, x))
+	def a(x: int):
+		""" Si l'état 'x' est accpetant """
+		return ID.vpool.id((ID.A, x))
 
 	@staticmethod
-	def t(x, y, l): return ID.vpool.id((ID.T, x, y, l))
+	def t(x: int, y: int, l: str):
+		""" Si il y a une transitions de l'état 'x' à 'y' avec la lettre 'l' """
+		return ID.vpool.id((ID.T, x, y, l))
 
 	@staticmethod
-	def v(x, i, w): return ID.vpool.id((ID.V, x, i, w))
+	def v(x: int, i: int, w: str):
+		""" Si l'état 'x' est visité à la 'i' lettre du mot 'w' """
+		return ID.vpool.id((ID.V, x, i, w))
 
 	@staticmethod
 	def x(x, s, w): return ID.vpool.id((ID.X, x, s, w))
@@ -69,7 +83,8 @@ class AutGenerator:
 
 	def _coherence(self):
 		"""
-		Yo
+		Représente les contraintes de cohérence de l'automate.
+		C'est à dire qu'il soit correctement contruit.
 		"""
 
 		# La source est dans l'automate
@@ -88,7 +103,8 @@ class AutGenerator:
 
 	def _consistence(self):
 		"""
-		Yo
+		Représente la consistence de l'automate.
+		C'est à dire qu'il accepte tous les mots de pos et rejette tous les mots de neg.
 		"""
 
 		# Toutes les exécutions commencent uniquement à la source
@@ -110,8 +126,6 @@ class AutGenerator:
 		for w in self.neg:
 			for x in range(self.k):
 				yield [-ID.v(x, len(w), w), -ID.a(x)]
-
-		# Il existe une exec ??
 
 		# Les exécutions sont valides
 		for w in self.pos + self.neg:
@@ -162,7 +176,6 @@ class AutGenerator:
 			pass
 		return sat, model
 
-
 class DetAutGenerator(AutGenerator):
 
 	def __init__(self, alphabet: str, pos: list[str], neg: list[str], k: int):
@@ -170,10 +183,9 @@ class DetAutGenerator(AutGenerator):
 
 	def _determinism(self):
 		"""
-		Yo
+		Représente le déterminisme de l'automate.
+		C'est à dire qu'il n'y a pas de deux transitions sortant d'un même état avec la même lettre.
 		"""
-
-		# 
 		for x in range(self.k):
 			for l in self.alphabet:
 				for y in range(self.k):
@@ -184,7 +196,6 @@ class DetAutGenerator(AutGenerator):
 		return super()._get_constraints() + [
 			self._determinism,
 		]
-
 
 class MinAutGenerator(DetAutGenerator):
 
@@ -204,24 +215,19 @@ class CompAutGenerator(DetAutGenerator):
 
 	def _completeness(self):
 		"""
-		Yo
+		Représente la complétude de l'automate.
+		C'est à dire qu'il y a une transition sortant de chaque état avec chaque lettre.
 		"""
 
-		# 
+		# Pour chaque état il y a une transition sortant avec chaque lettre
 		for x in range(self.k):
 			for l in self.alphabet:
 				yield [ID.t(x, y, l) for y in range(self.k)]
-
-		# 
-		for x in range(self.k):
-			yield [ID.t(y, x, l) for y in range(self.k) for l in self.alphabet]
-			
 
 	def _get_constraints(self) -> list:
 		return super()._get_constraints() + [
 			self._completeness,
 		]
-
 
 class RevAutGenerator(DetAutGenerator):
 
@@ -230,10 +236,9 @@ class RevAutGenerator(DetAutGenerator):
 
 	def _reversibility(self):
 		"""
-		Yo
+		Représente la réversibilité de l'automate.
+		C'est à dire que l'automate accepte et rejete les même mot en inversant les transitions.
 		"""
-
-		# 
 		for w in self.pos + self.neg:
 			for i in range(len(w)):
 				for x in range(self.k):
@@ -328,7 +333,7 @@ def gen_aut(alphabet: str, pos: list[str], neg: list[str], k: int) -> DFA:
 
 # Q3
 def gen_minaut(alphabet: str, pos: list[str], neg: list[str]) -> DFA:
-	sat, result, k = MinAutGenerator(alphabet, pos, neg).generate("verbose")
+	sat, result, k = MinAutGenerator(alphabet, pos, neg).generate()
 	return AutBuilder(alphabet, pos, neg, k).build(result) if sat else None
 
 # Q4
