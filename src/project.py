@@ -7,10 +7,7 @@ from automata.fa.nfa import NFA
 
 from pysat.solvers import Minisat22, Minicard
 from pysat.formula import CNF, CNFPlus, IDPool
-from pysat.card import CardEnc
 
-
-#########################
 
 ################### VARIABLES ####################
 
