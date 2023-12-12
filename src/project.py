@@ -108,7 +108,6 @@ class AutGenerator:
         for w in self.pos:
             yield [ID.x(x, len(w), w) for x in range(self.k)]
             for x in range(self.k):
-                # yield [-ID.v(x, len(w), w), ID.a(x)]
                 yield [-ID.x(x, len(w), w), ID.v(x, len(w), w)]
                 yield [-ID.x(x, len(w), w), ID.a(x)]
                 yield [-ID.v(x, len(w), w), -ID.a(x), ID.x(x, len(w), w)]
@@ -126,7 +125,6 @@ class AutGenerator:
                         if i == 0 and x != 0:
                             continue
                         yield [-ID.v(x, i, w), -ID.t(x, y, w[i]), ID.v(y, i + 1, w)]
-                        # yield [-ID.v(x, i, w), -ID.v(y, i+1, w), ID.t(x, y, w[i])]
 
         for w in self.pos + self.neg:
             for i in range(len(w)):
@@ -231,14 +229,12 @@ class RevAutGenerator(DetAutGenerator):
         Représente la réversibilité de l'automate.
         C'est à dire que l'automate accepte et rejete les même mot en inversant les transitions.
         """
-        for w in self.pos + self.neg:
-            for i in range(len(w)):
-                for x in range(self.k):
-                    for y in range(self.k):
-                        if i == 0 and x != 0:
-                            continue
-                        yield [-ID.v(y, i, w), -ID.t(y, x, w[i]), ID.v(x, i + 1, w)]
-                        yield [-ID.v(y, i, w), -ID.v(x, i + 1, w), ID.t(y, x, w[i])]
+        for l in self.alphabet:
+            for x in range(self.k):
+                for y in range(self.k):
+                    for z in range(self.k):
+                        if z != x:
+                            yield [-ID.t(x, y, l), -ID.t(z, y, l)]
 
     def _get_constraints(self) -> list:
         return super()._get_constraints() + [
