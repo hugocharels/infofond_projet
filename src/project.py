@@ -117,7 +117,7 @@ class AutGenerator:
             for x in range(self.k):
                 yield [-ID.v(x, len(w), w), -ID.a(x)]
 
-        # Les exécutions sont valides
+        # Les exécutions sont des suites d'états visités par les transitions
         for w in self.pos + self.neg:
             for i in range(len(w)):
                 for x in range(self.k):
@@ -126,6 +126,7 @@ class AutGenerator:
                             continue
                         yield [-ID.v(x, i, w), -ID.t(x, y, w[i]), ID.v(y, i + 1, w)]
 
+        # Un état ne peut être visité que s'il existe une transition qui va d'un état visité a lui avec la bonne lettre
         for w in self.pos + self.neg:
             for i in range(len(w)):
                 for x in range(self.k):
@@ -162,8 +163,6 @@ class AutGenerator:
     def generate(self, *args) -> tuple[bool, list[int]]:
         cnf = self._generate(*args)
         sat, model = self._solve(cnf)
-        if sat and "verbose" in args:
-            pass
         return sat, model
 
 
@@ -315,15 +314,15 @@ class AutBuilder:
                             transitions[f"q{x}"][l].add(f"q{y}")
         return transitions
 
-    def _get_transitions(self, model: list[int], *args):
+    def _get_transitions(self, model: list[int]):
         return self._get_nd_transitions(model) if "nfa" else self._get_d_transitions(model)
 
-    def build(self, model: list[int], *args) -> FA:
+    def build(self, model: list[int]) -> FA:
         return (
             DFA(
                 states=self._get_states(model),
                 input_symbols=set(self.alphabet),
-                transitions=self._get_transitions(model, *args),
+                transitions=self._get_transitions(model),
                 initial_state="q0",
                 final_states=self._get_final_states(model),
                 allow_partial=True,
@@ -332,7 +331,7 @@ class AutBuilder:
             else NFA(
                 states=self._get_states(model),
                 input_symbols=set(self.alphabet),
-                transitions=self._get_transitions(model, *args),
+                transitions=self._get_transitions(model),
                 initial_state="q0",
                 final_states=self._get_final_states(model),
             )
