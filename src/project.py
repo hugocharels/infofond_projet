@@ -193,12 +193,32 @@ class MinAutGenerator(DetAutGenerator):
     def __init__(self, alphabet: str, pos: list[str], neg: list[str]):
         super().__init__(alphabet, pos, neg, 1)
 
-    def generate(self, *args) -> list[int]:
-        self.k += 1
+    def checkFloors(self, lo, hi, *args):
+        if lo == hi:
+            return lo
+        mid = (lo + hi) // 2
+        self.k = mid
+        sat, _ = super().generate(*args)
+        if sat:
+            return self.checkFloors(lo, mid, *args)
+        else:
+            return self.checkFloors(mid + 1, hi, *args)
+
+    def checkFloorsWhenSmall(self, k_max, *args):
+        k = 1
+        while k < k_max:
+            self.k = k
+            sat, _ = super().generate(*args)
+            if sat: break
+            k *= 2
+        return self.checkFloors(max(1, k // 2), min(k, k_max), *args)
+
+    def generate(self, *args):
+        k_max = 100
+        self.k = self.checkFloorsWhenSmall(k_max, *args)
         sat, model = super().generate(*args)
-        return (sat, model, self.k) if sat else self.generate(*args)
-
-
+        return sat, model, self.k
+    
 class CompAutGenerator(DetAutGenerator):
     def __init__(self, alphabet: str, pos: list[str], neg: list[str], k: int):
         super().__init__(alphabet, pos, neg, k)
@@ -370,5 +390,11 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    #main()
+    # ajout timer 
+    import time
+    start_time = time.time()
+    test_minaut()
+    end_time = time.time()
+    print("Temps d'execution : %s secondes ---" % (end_time - start_time))
 
