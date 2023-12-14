@@ -159,7 +159,7 @@ class AutGenerator:
         solver.append_formula(cnf)
         return solver.solve(), solver.get_model()
 
-    def generate(self, *args) -> list[int]:
+    def generate(self, *args) -> tuple[bool, list[int]]:
         cnf = self._generate(*args)
         sat, model = self._solve(cnf)
         if sat and "verbose" in args:
@@ -193,32 +193,35 @@ class MinAutGenerator(DetAutGenerator):
     def __init__(self, alphabet: str, pos: list[str], neg: list[str]):
         super().__init__(alphabet, pos, neg, 1)
 
-    def checkFloors(self, lo, hi, *args):
+    def _get_k_max(self) -> int:
+        return sum(len(w) for w in self.pos + self.neg) + 1
+
+    def _check_bounds(self, lo, hi, *args):
         if lo == hi:
             return lo
         mid = (lo + hi) // 2
         self.k = mid
         sat, _ = super().generate(*args)
         if sat:
-            return self.checkFloors(lo, mid, *args)
+            return self._check_bounds(lo, mid, *args)
         else:
-            return self.checkFloors(mid + 1, hi, *args)
+            return self._check_bounds(mid + 1, hi, *args)
 
-    def checkFloorsWhenSmall(self, k_max, *args):
-        k = 1
-        while k < k_max:
-            self.k = k
+    def _check_bounds_when_small(self, k_max, *args):
+        while self.k < k_max:
             sat, _ = super().generate(*args)
-            if sat: break
-            k *= 2
-        return self.checkFloors(max(1, k // 2), min(k, k_max), *args)
+            if sat:
+                break
+            self.k *= 2
+        return self._check_bounds(max(1, self.k // 2), min(self.k, k_max), *args)
 
-    def generate(self, *args):
-        k_max = 100
-        self.k = self.checkFloorsWhenSmall(k_max, *args)
+    def generate(self, *args) -> tuple[bool, list[int], int]:
+        k_max = self._get_k_max()
+        self.k = self._check_bounds_when_small(k_max, *args)
         sat, model = super().generate(*args)
         return sat, model, self.k
-    
+
+
 class CompAutGenerator(DetAutGenerator):
     def __init__(self, alphabet: str, pos: list[str], neg: list[str], k: int):
         super().__init__(alphabet, pos, neg, k)
@@ -390,11 +393,4 @@ def main():
 
 
 if __name__ == "__main__":
-    #main()
-    # ajout timer 
-    import time
-    start_time = time.time()
-    test_minaut()
-    end_time = time.time()
-    print("Temps d'execution : %s secondes ---" % (end_time - start_time))
-
+    main()
