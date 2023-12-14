@@ -207,6 +207,10 @@ class MinAutGenerator(DetAutGenerator):
             return self._check_bounds(mid + 1, hi, *args)
 
     def _check_bounds_when_small(self, k_max, *args):
+        """
+        Cherche d'abord les puissances de 2 consécutive entre lesquelles se trouve k.
+        Puis effectue une recherche dichotomique entre ces deux puissances de 2 pour trouver la valeur minimale de k.
+        """
         while self.k < k_max:
             sat, _ = super().generate(*args)
             if sat:
