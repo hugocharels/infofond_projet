@@ -1,0 +1,29 @@
+Pour répondre à cette question, nous avons dû développer un algorithme capable de générer un automate fini déterministe (DFA) minimal en termes de nombre d'états pour un alphabet \( \Sigma \). Cet automate doit être consistant avec les ensembles de mots \( P \) (positifs) et \( N \) (négatifs).
+
+\phantomsection
+\subsubsection*{Implémentation de \texttt{gen\_minaut}}
+\addcontentsline{toc}{subsubsection}{Implémentation de \texttt{gen\_minaut}}
+
+\begin{itemize}
+    \item \textbf{Génération de l'automate :} La classe \texttt{MinAutGenerator} étend les fonctionnalités de \texttt{DetAutGenerator} en initialisant la valeur de $k$ et en appliquant une recherche dichotomique pour trouver le nombre minimal d'états nécessaires à l'automate.\\
+
+    \item \textbf{Construction de l'automate :} Après avoir trouvé un modèle satisfaisant, la fonction \texttt{build} de la classe \texttt{AutBuilder} est appelée pour construire le DFA à partir de ce modèle.
+    
+\end{itemize}
+
+\phantomsection
+\subsubsection*{Approche Algorithmique}
+\addcontentsline{toc}{subsubsection}{Approche Algorithmique}
+L'approche algorithmique\footnote{L'approche utilisée est inspirée de la correction de l'exercice 1.3 du cours d'Algorithmique 2.} mise en œuvre dans \texttt{MinAutGenerator} consiste à :
+
+\begin{enumerate}
+    \item Utiliser la méthode \texttt{\_check\_bounds\_when\_small} pour estimer un nombre initial d'états \( k \) en augmentant exponentiellement sa valeur. Cette étape s'arrête lorsque la génération d'un automate est satisfaisante ou que la limite \( k_{\text{max}} \) est atteinte. Cette limites est calculée en faisant la somme de la taille de tout les mots de \( P \) et \( N \).
+    
+    \item Affiner cette estimation à l'aide de la méthode \texttt{\_check\_bounds}, qui implémente une recherche dichotomique pour déterminer le plus petit \( k \) qui satisfait les contraintes. Cette recherche dichotomique est effectuée entre la moitié de la limite supérieure trouvée et cette limite.
+
+    \item À chaque étape de \( k \), formuler la génération de l'automate comme un problème de satisfaction de contraintes booléennes (SAT), en tenant compte des mots acceptés et rejetés, ainsi que des contraintes de \hyperref[cohérence]{cohérence}, \hyperref[consistance]{consistance} et \hyperref[determinisme]{déterminisme}.
+    
+    \item Utiliser un solveur SAT pour tester si un modèle satisfaisant existe pour la valeur actuelle de \( k \). Si un tel modèle est trouvé, l'automate correspondant est construit. Sinon, la recherche continue avec une nouvelle valeur de \( k \) déterminée par la recherche dichotomique.
+\end{enumerate}
+
+Cette méthode assure que l'automate généré est le plus petit possible en termes de nombre d'états, tout en étant consistant avec les ensembles de mots \( P \) et \( N \).

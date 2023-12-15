@@ -1,0 +1,16 @@
+Suite à notre analyse précédente, nous avons développé une fonction, nommée \texttt{gen\_aut}, pour générer un automate fini déterministe (DFA) sur un alphabet donné \( \Sigma \) et qui est consistant avec des ensembles de mots positifs \( P \) et négatifs \( N \), tout en respectant une contrainte sur le nombre maximal d'états \( k \). Cette fonction utilise la librairie PySAT pour résoudre un problème SAT correspondant à la construction de l'automate.
+
+
+\subsubsection*{Description de l'Algorithme \texttt{gen\_aut}}
+\addcontentsline{toc}{subsubsection}{Description de l'Algorithme \texttt{gen\_aut}}
+
+L'algorithme implémenté dans \texttt{gen\_aut} suit les étapes suivantes :
+
+\begin{enumerate}
+    \item \textbf{Construction d'un ensemble de clauses :} Utilisant la classe \texttt{DetAutGenerator}, l'algorithme génère un ensemble de clauses SAT représentant les contraintes de \hyperref[cohérence]{cohérence}, de \hyperref[consistance]{consistance} et de \hyperref[determinisme]{déterminisme} de l'automate. Ces contraintes assurent que l'automate est correctement construit et qu'il accepte tous les mots dans \( P \) et rejette ceux dans \( N \), tout en ne dépassant pas \( k \) états.\\
+
+    \item \textbf{Appel d'un solveur SAT :} Le programme utilise ensuite un solveur SAT, tel que \texttt{Minisat}, pour déterminer si les clauses peuvent être satisfaites, c'est-à-dire s'il est possible de construire un automate répondant aux critères donnés.\\
+
+    \item \textbf{Retour de l'automate ou de None :} Si le solveur trouve une solution, l'algorithme utilise la classe \texttt{AutBuilder} pour construire l'automate fini correspondant à partir de la valuation trouvée par le solveur. Si aucune solution n'est trouvée, la fonction retourne \texttt{None}, indiquant qu'aucun automate répondant aux critères n'existe.
+\end{enumerate}
+

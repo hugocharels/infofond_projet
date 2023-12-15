@@ -1,0 +1,27 @@
+
+Cette question demande la création d'un automate non déterministe (NFA) en fonction d'un alphabet donné, de listes de mots acceptants et rejetant, et d'une contrainte sur le nombre d'états de l'automate. La fonction \texttt{gen\_autn} est conçue pour répondre à cette exigence.
+
+\phantomsection
+\subsubsection*{Implémentation de \texttt{gen\_autn}}
+\addcontentsline{toc}{subsubsection}{Implémentation de \texttt{gen\_autn}}
+
+L'implémentation se décompose comme suit :
+
+\begin{itemize}
+
+        \item \textbf{Génération de l'automate :} La classe \texttt{AutGenerator} est utilisée pour générer un ensemble de clauses SAT respectant les contraintes de \hyperref[cohérence]{cohérence}, de \hyperref[consistance]{consistance} et la contrainte du nombre d'états \texttt{k}. Puis les clauses sont fournies au solver SAT pour atteindre l'objectif fixé. 
+    \\
+    \item \textbf{Construction de l'automate :} Si la génération est fructueuse, la fonction \texttt{build} de la classe \texttt{AutBuilder} est utilisée pour créer le NFA à partir du modèle SAT retourné. En cas d'échec, la fonction renvoie \texttt{None}.
+\end{itemize}
+
+\phantomsection
+\subsubsection*{Contraintes pour la Génération de NFA}
+\addcontentsline{toc}{subsubsection}{Contraintes pour la Génération de NFA}
+
+Les contraintes principales utilisées pour générer le NFA sont :
+
+\begin{itemize}
+    \item \textbf{Contraintes de \hyperref[cohérence]{cohérence} :} Ces contraintes s'assurent que l'automate est correctement construit, en vérifiant la présence d'un état initial et la validité des transitions et des états acceptants.\\
+
+    \item \textbf{Contraintes de \hyperref[consistance]{consistance} :} Elles garantissent que l'automate accepte tous les mots dans \texttt{pos} et rejette ceux dans \texttt{neg}. Elles s'assurent également de la validité des chemins d'exécution au sein de l'automate.
+\end{itemize}

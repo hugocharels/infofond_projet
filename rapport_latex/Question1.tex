@@ -1,0 +1,191 @@
+\label{question 1}
+Dans cette question, nous sommes chargés de fournir une formule de logique propositionnelle satisfaisable si et seulement si il existe un automate fini \( A \) avec au plus \( k \) états, tel que \( P \subseteq L(A) \) et \( L(A) \cap N = \emptyset \) où \( P \) représente l'ensemble des mots acceptant de \( A \) et \( N \) représente l'ensemble des mots rejetant de \( A \).
+
+%cohérence
+\subsubsection*{Contraintes de Cohérence}
+\phantomsection
+\label{cohérence}
+\addcontentsline{toc}{subsubsection}{Contraintes de Cohérence}
+
+Dans la définition de l'automate fini \( A \), nous établissons les contraintes de cohérence suivantes :
+
+\begin{tcolorbox}[defaultstyle,title=Contrainte 1]
+   La source est dans l'automate (par défaut la source est l'état \( 0 \)) : \hspace{0.5cm}\( p_{0} \)
+\end{tcolorbox}
+
+
+\begin{tcolorbox}[defaultstyle,title=Contrainte 2]
+    Tous les états acceptants font partie de l'automate :
+    \begin{itemize}
+        \item Description: Pour tous états \( x \), si \( x \) est un état acceptant alors \( x \) est dans l'automate.\\
+        \item Formule initiale: \[ \bigwedge\limits_{x=0}^{k-1}a_{x}\rightarrow p_{x} \]
+        \item Mise en forme normale conjonctive (FNC): \[ \bigwedge\limits_{x=0}^{k-1} \lnot a_{x} \lor p_{x} \]
+    \end{itemize}
+\end{tcolorbox}
+
+
+\begin{tcolorbox}[defaultstyle,title=Contrainte 3]
+    Toutes les transitions sont valides :
+    \begin{itemize}
+        \item Description: S'il existe une transition \( x,y,l \) qui va de l'état \(x\) à l'état \(y\) avec la lettre \(l\), alors les états \(x\) et \(y\) sont dans l'automate.\\
+        \item Formule initiale: \[ \bigwedge\limits_{x=0}^{k-1}\bigwedge\limits_{y=0}^{k-1}\bigwedge\limits_{l\in\Sigma} t_{x,y,l} \rightarrow p_{x} \land p_{y} \]
+        \item Transformation en FNC: On retire l'implication
+        \[ \bigwedge\limits_{x=0}^{k-1}\bigwedge\limits_{y=0}^{k-1}\bigwedge\limits_{l\in\Sigma} \lnot t_{x,y,l} \lor (p_{x} \land p_{y}) \]
+        On distribue le terme de gauche de la disjonction sur la conjonction et nous obtenons cette contrainte en FNC :
+        \[ \bigwedge\limits_{x=0}^{k-1}\bigwedge\limits_{y=0}^{k-1}\bigwedge\limits_{l\in\Sigma} (\lnot t_{x,y,l} \lor p_{x}) \land (\lnot t_{x,y,l} \lor p_{y}) \]
+    \end{itemize}
+\end{tcolorbox}
+
+
+
+
+
+
+%Consistance
+\subsubsection*{Contraintes de Consistance}
+\phantomsection
+\label{consistance}
+\addcontentsline{toc}{subsubsection}{Contraintes de Consistance}
+
+Les contraintes de consistance garantissent que l'automate \( A \) est consistant avec les ensembles \( P \) et \( N \), respectant ainsi les conditions \( P \subseteq L(A) \) et \( L(A) \cap N = \emptyset \).
+
+\begin{tcolorbox}[defaultstyle,title=Contrainte 1]
+    Toutes les exécutions commencent uniquement à la source (\(p_0\)) :
+    \begin{itemize}  
+        \item Description: Chaque mot \(w \in P \cup N \) visite la source et aucun autre état en premier\\
+    
+        \item Formule initiale en FNC:
+        \[ \bigwedge\limits_{w\in P \cup N} v_{0,0,w}\land \bigwedge\limits_{x=1}^{k-1}\lnot v_{x,0, w}\]
+    \end{itemize}
+\end{tcolorbox}
+
+\begin{tcolorbox}[defaultstyle,title=Contrainte 2]
+    \label{contrainte 2}
+    Pour tous les mots de $P$, il existe une exécution acceptante :
+    
+    \begin{itemize}
+        \item Description: Il existe un état \(x\) qui est visité à la dernière position dans le mot \( w \in P \) et que cet état \(x\) soit acceptant.\\
+
+        \item Formule initiale:
+        \[ \bigwedge\limits_{w \in P}\bigvee\limits_{x=0}^{k-1} v_{x, |w|, w} \land a_{x} \]
+        
+        \item Mise en forme normale conjonctive (FNC): Afin de transformer cette formule en FNC, il est préférable d'utiliser la transformation de Tseitin. Cette transformation implique, dans ce cas, de séparer la double implication en deux implications simples. Ensuite, il faut les éliminer et distribuer l'élément de gauche de la disjonction sur la conjonction de la sous-formule de gauche où les implications ont été retirées.
+
+        \[\bigwedge\limits_{w \in P} \left(\bigvee\limits_{x=0}^{k-1} x_{x, |w|, w} \right)\land \left(\bigwedge\limits_{x=0}^{k-1} x_{x, |w|, w} \leftrightarrow (v_{x, |w|, w} \land a_{x}) \right) \]
+
+        \[ \bigwedge\limits_{w \in P} \left(\bigvee\limits_{x=0}^{k-1} x_{x, |w|, w} \right)\land \left(\bigwedge\limits_{x=0}^{k-1} \left(x_{x, |w|, w} \rightarrow (v_{x, |w|, w} \land a_{x}) \right) \land \left( (v_{x, |w|, w} \land a_{x}) \rightarrow x_{x, |w|, w}\right) \right) \]
+
+        \[ \bigwedge\limits_{w \in P} \left(\bigvee\limits_{x=0}^{k-1} x_{x, |w|, w} \right)\land \left(\bigwedge\limits_{x=0}^{k-1} \left(\lnot x_{x, |w|, w} \lor (v_{x, |w|, w} \land a_{x}) \right) \land \left( \lnot v_{x, |w|, w} \lor \lnot a_{x} \lor x_{x, |w|, w}\right) \right) \]
+
+        \[ \bigwedge\limits_{w \in P} \left(\bigvee\limits_{x=0}^{k-1} x_{x, |w|, w} \right)\land \left(\bigwedge\limits_{x=0}^{k-1} (\lnot x_{x, |w|, w} \lor v_{x, |w|, w}) \land (\lnot x_{x, |w|, w} \lor a_{x}) \land \left( \lnot v_{x, |w|, w} \lor \lnot a_{x} \lor x_{x, |w|, w}\right) \right) \]
+
+
+        
+    \end{itemize}
+
+\end{tcolorbox}
+            
+\begin{tcolorbox}[defaultstyle,title=Contrainte 3]
+    Pour tous les mots de $N$, il n'existe pas d'exécution acceptante :
+    
+    \begin{itemize}
+        \item Description: Il n'existe pas d'état \(x\) qui est visité à la dernière position dans le mot \( w \in N \) et que cet état \(x\) soit acceptant.\\
+    
+        \item Formule initiale:
+        \[ \bigwedge\limits_{w \in P}\neg \bigvee\limits_{n=0}^{k-1} v_{x, |w|, w} \land a_{x} \]
+        
+        \item Mise en forme normale conjonctive (FNC): Il faut appliquer la loi de Morgan d'abord à la grande disjonction, puis à la petite conjonction.  Cela nous donne la formule suivante :
+        \[ \bigwedge\limits_{w \in N}\bigwedge\limits_{n=0}^{k-1} \lnot v_{x, |w|, w} \lor \lnot a_{x} \]
+    \end{itemize}
+\end{tcolorbox}
+
+\begin{tcolorbox}[defaultstyle,title=Contrainte 4]
+    Une exécution est une suite d'état visité par les transitions :
+        
+    \begin{itemize}
+    \item Description: Si l'état $x$ est visité à la $i$éme lettre du mot $w$ alors s'il existe une transition qui va de l'état $x$ vers un état $y$ avec la $i$éme lettre du mot $w$ alors l'état $y$ est visité à la $i+1$ème lettre du mot $w$ \\
+    
+    \item Formule initiale :
+        \[\bigwedge\limits_{w\in P \cup N} \bigwedge\limits_{i=0}^{|w|-1}\bigwedge\limits_{x=0}^{k-1} v_{x,i,w} \rightarrow \bigwedge\limits_{y=0}^{k-1} t_{x,y,w[i]} \rightarrow v_{y,i+1,w} \]
+
+    \item Mise en forme normale conjonctive (FNC) : Il faut d'abord éliminer les deux implications, puis rentrée la variable dans la grande conjonction.
+    
+    \[ \bigwedge\limits_{w\in P \cup N} \bigwedge\limits_{i=0}^{|w|-1}\bigwedge\limits_{x=0}^{k-1} \lnot v_{x,i,w} \lor \bigwedge\limits_{y=0}^{k-1} \lnot t_{x,y,w[i]} \lor v_{y,i+1,w} \]
+    
+    \[ \bigwedge\limits_{w\in P \cup N} \bigwedge\limits_{i=0}^{|w|-1}\bigwedge\limits_{x=0}^{k-1} \bigwedge\limits_{y=0}^{k-1} \lnot v_{x,i,w} \lor \lnot t_{x,y,w[i]} \lor v_{y,i+1,w} \]
+    
+    \end{itemize}
+
+\end{tcolorbox}
+
+\begin{tcolorbox}[defaultstyle,title=Contrainte 5]
+    \phantomsection
+    \label{contrainte 5}
+    Un état ne peut être visité que s’il existe un état précédent qui est également visité et qu’il y a une transition qui lie les deux états.
+    
+    \begin{itemize}
+        \item Description: Si l'état $x$ est visité à la $i+1$éme lettre du mot $w$ alors il existe une transition qui va d'un état $y$ vers l'état $x$ avec la $i$éme lettre du mot $w$ et l'état $y$ est visité à la $i$éme lettre du mot $w$ \\
+        
+        \item Formule initiale:
+        \[ \bigwedge\limits_{w\in P \cup N} \bigwedge\limits_{i=0}^{|w|-1}\bigwedge\limits_{x=0}^{k-1} v_{x,i+1,w} \rightarrow \bigvee\limits_{y=0}^{k-1} (t_{y,x,w[i]} \land v_{y,i,w}) \]
+
+        \item Mise en forme normale conjonctive (FNC): On commence par éliminer l'implication. Ensuite, on déplace la variable $v$ dans la grande disjonction. Et nous obtenons la formule suivante :
+        \[ \bigwedge\limits_{w\in P \cup N} \bigwedge\limits_{i=0}^{|w|-1}\bigwedge\limits_{x=0}^{k-1} \bigvee\limits_{y=0}^{k-1} \lnot v_{x,i+1,w} \lor (t_{y,x,w[i]} \land v_{y,i,w}) \]
+
+        Par la suite, on applique la transformation de Tseitin. Dans ce cas, cela implique de décomposer la double implication en deux implications simples, lesquelles sont ensuite éliminées. Finalement, on effectue la distribution pour obtenir la formule sous FNC.
+
+        \[ \bigwedge_{w\in P \cup N}\bigwedge_{i=0}^{|w|-1}\bigwedge_{x=0}^{k-1} \left( \bigvee_{y=0}^{k-1} \lnot v_{x,i+1,w} \lor y_{x,y,i,w} \right)
+        \land \left( \bigwedge_{y=0}^{k-1} y_{x,y,i,w} \leftrightarrow (t_{y,x,w[i]} \land v_{y,i,w}) \right) \]
+        
+        
+        \begin{multline*}
+        \bigwedge_{w\in P \cup N}\bigwedge_{i=0}^{|w|-1}\bigwedge_{x=0}^{k-1} \left( \bigvee_{y=0}^{k-1} \lnot v_{x,i+1,w} \lor y_{x,y,i,w} \right) \\
+        \land \left( \bigwedge_{y=0}^{k-1} ( y_{x,y,i,w} \rightarrow (t_{y,x,w[i]} \land v_{y,i,w}) ) \land ((t_{y,x,w[i]} \land v_{y,i,w}) \rightarrow y_{x,y,i,w}) \right)
+        \end{multline*}
+        
+        \begin{multline*}
+        \bigwedge_{w\in P \cup N}\bigwedge_{i=0}^{|w|-1}\bigwedge_{x=0}^{k-1} \left( \bigvee_{y=0}^{k-1} \lnot v_{x,i+1,w} \lor y_{x,y,i,w} \right) \\
+        \land \left( \bigwedge_{y=0}^{k-1} ( \lnot y_{x,y,i,w} \lor (t_{y,x,w[i]} \land v_{y,i,w}) ) \land (\lnot t_{y,x,w[i]} \lor \lnot v_{y,i,w} \lor y_{x,y,i,w}) \right)
+        \end{multline*}
+        
+        \begin{multline*}
+        \bigwedge_{w\in P \cup N}\bigwedge_{i=0}^{|w|-1}\bigwedge_{x=0}^{k-1} \left( \bigvee_{y=0}^{k-1} \lnot v_{x,i+1,w} \lor y_{x,y,i,w} \right) \\
+        \land \left( \bigwedge_{y=0}^{k-1} ( \lnot y_{x,y,i,w} \lor t_{y,x,w[i]} ) \land (\lnot y_{x,y,i,w} \lor v_{y,i,w}) \land (\lnot t_{y,x,w[i]} \lor \lnot v_{y,i,w} \lor y_{x,y,i,w}) \right)
+        \end{multline*}
+        
+   \end{itemize}
+   
+\end{tcolorbox}
+
+%Determinisme
+\subsubsection*{Contraintes de Déterminisme}
+\phantomsection
+\label{determinisme}
+\addcontentsline{toc}{subsubsection}{Contraintes de Déterminisme}
+
+
+\begin{tcolorbox}[defaultstyle,title=Contrainte 1]
+     Les transitions sont unique :
+        \begin{itemize}
+
+        \item Description : S'il y a une transition qui va de l'état $x$ à l'état $y$ avec la lettre $l$ alors il n'existe pas de transition qui va de ce même état $x$ avec la même lettre $l$ vers un état $z$ différent de $y$. \\
+        
+        \item Formule initiale:
+            \[\bigwedge\limits_{l\in \Sigma} \bigwedge\limits_{x=0}^{k-1}\bigwedge\limits_{y=0}^{k-1} t_{x,y,l} \rightarrow \lnot \bigvee\limits_{z=0, y\neq z}^{k-1} t_{x,z,l}\]
+
+        \item Transformation en FNC : La première étape du processus consiste à éliminer les implications. Ensuite, on applique la loi de Morgan. Pour finir, il suffit de déplacer la variable dans la grande conjonction.
+            
+            \[\bigwedge\limits_{l\in \Sigma} \bigwedge\limits_{x=0}^{k-1}\bigwedge\limits_{y=0}^{k-1} \lnot t_{x,y,l} \lor \lnot \bigvee\limits_{z=0, y\neq z}^{k-1} t_{x,z,l}\]
+
+            \[\bigwedge\limits_{l\in \Sigma} \bigwedge\limits_{x=0}^{k-1}\bigwedge\limits_{y=0}^{k-1} \lnot t_{x,y,l} \lor \bigwedge\limits_{z=0, y\neq z}^{k-1} \lnot t_{x,z,l}\]
+            
+            \[\bigwedge\limits_{l\in \Sigma} \bigwedge\limits_{x=0}^{k-1}\bigwedge\limits_{y=0}^{k-1} \bigwedge\limits_{z=0, y\neq z}^{k-1} \lnot t_{x,y,l} \lor \lnot t_{x,z,l}\]
+
+
+        \end{itemize}
+    
+\end{tcolorbox}
+
+\vspace{1cm}
+\textbf{Note :} Les contraintes de cohérence, de consistance et de déterminisme détaillées ci-dessus sont applicables à presque toutes les questions suivantes et seront référencées en conséquence.
+\clearpage

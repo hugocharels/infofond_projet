@@ -1,0 +1,34 @@
+\label{question 6}
+
+Pour répondre à cette question, nous utilisons la fonction \texttt{gen\_autcard} afin de construire un automate fini complet avec une contrainte supplémentaire sur le nombre d'états acceptants. Cette contrainte est représentée par un entier \( l \), limitant le nombre maximum d'états acceptants dans l'automate.
+
+\phantomsection
+\subsubsection*{Implémentation de \texttt{gen\_autcard}}
+\addcontentsline{toc}{subsubsection}{Implémentation de \texttt{gen\_autcard}}
+
+L'implémentation de \texttt{gen\_autcard} se fait en deux étapes principales :
+
+\begin{itemize}
+    \item \textbf{Génération de l'automate :} Utilisant la classe \texttt{CardAutGenerator}, l'automate est généré en respectant les contraintes de cardinalité. Cette classe généralise \texttt{DetAutGenerator} en ajoutant la contrainte que le nombre d'états acceptants doit être au plus \( l \). Cette contrainte est intégrée en utilisant la classe \texttt{CNFPlus}, qui permet l'ajout direct de contraintes de cardinalité.\\
+
+    \item \textbf{Construction de l'automate :} Si la génération est réussie, la fonction \texttt{build} de la classe \texttt{AutBuilder} est appelée pour construire l'automate à partir du modèle trouvé. En cas d'échec, la fonction renvoie \texttt{None}.
+\end{itemize}
+
+\vspace{0.5cm}
+
+\phantomsection
+\addcontentsline{toc}{subsubsection}{Contrainte de Cardinalité}
+
+\begin{tcolorbox}[defaultstyle,title=Contrainte de Cardinalité]
+La contrainte est exprimée par la formule suivante, qui assure que le nombre d'états acceptants ne dépasse pas \( l \) :
+
+\[ \big\lvert \{ x \vert \forall x \in \{0,\dots,k-1\} : a_x \} \big\rvert \leq l \]
+
+
+Cette formule garantit que, parmi les états générés, au plus \( l \) sont marqués comme états acceptants.
+\end{tcolorbox}
+
+\vspace{0.5cm}
+Les autres contraintes de \hyperref[cohérence]{cohérence}, de \hyperref[consistance]{consistance} et de \hyperref[determinisme]{déterminisme} définies à la \hyperref[question 1]{question 1} sont également maintenues pour assurer la validité de l'automate généré.
+
+

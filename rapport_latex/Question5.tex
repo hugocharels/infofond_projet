@@ -1,0 +1,37 @@
+Dans la suite des questions 1 et 2, une nouvelle exigence est introduite pour la fonction \texttt{gen\_autr} : l'automate retourné doit être réversible. Cela signifie que sa fonction de transition reste une fonction même lorsque les transitions sont inversées, permettant ainsi de "rembobiner" de manière déterministe ses exécutions. 
+
+\phantomsection
+\subsubsection*{Description de l'Algorithme \texttt{gen\_autr}}
+\addcontentsline{toc}{subsubsection}{Description de l'Algorithme \texttt{gen\_autr}}
+
+L'algorithme \texttt{gen\_autr} utilise la classe \texttt{RevAutGenerator} pour générer un ensemble de clauses SAT respectant les contraintes de \hyperref[cohérence]{cohérence}, de \hyperref[consistance]{consistance} et de \hyperref[determinisme]{déterminisme} et en particulier la contrainte de réversibilité. Si le solveur SAT trouve une solution satisfaisant ces clauses, l'automate est construit à l'aide de la classe \texttt{AutBuilder}; sinon, \texttt{None} est retourné.
+
+\vspace{0.5cm}
+
+\phantomsection
+\addcontentsline{toc}{subsubsection}{Contrainte de Réversibilité}
+\begin{tcolorbox}[defaultstyle,title=Contrainte de Réversibilité]
+     Les transitions inversées sont unique :
+        \begin{itemize}
+
+        \item Description : S'il y a une transition qui va de l'état $x$ à l'état $y$ avec la lettre $l$ alors il n'existe pas de transition qui va d'un état $z$ différent de $x$ avec la même lettre $l$ vers l'état $y$. \\
+        
+        \item Formule initiale:
+            \[\bigwedge\limits_{l\in \Sigma} \bigwedge\limits_{x=0}^{k-1}\bigwedge\limits_{y=0}^{k-1} t_{x,y,l} \rightarrow \lnot \bigvee\limits_{z=0, z\neq x}^{k-1} t_{z,y,l}\]
+
+        \item Transformation en FNC : La première étape du processus consiste à éliminer l'implication. Ensuite, on applique la loi de Morgan. Pour finir, il suffit de déplacer la variable dans la grande conjonction.
+            
+            \[\bigwedge\limits_{l\in \Sigma} \bigwedge\limits_{x=0}^{k-1}\bigwedge\limits_{y=0}^{k-1} \lnot t_{x,y,l} \lor \lnot \bigvee\limits_{z=0, z\neq x}^{k-1} t_{z,y,l}\]
+
+            \[\bigwedge\limits_{l\in \Sigma} \bigwedge\limits_{x=0}^{k-1}\bigwedge\limits_{y=0}^{k-1} \lnot t_{x,y,l} \lor \bigwedge\limits_{z=0, z\neq x}^{k-1} \lnot t_{z,y,l}\]
+            
+            \[\bigwedge\limits_{l\in \Sigma} \bigwedge\limits_{x=0}^{k-1}\bigwedge\limits_{y=0}^{k-1} \bigwedge\limits_{z=0, z\neq x}^{k-1} \lnot t_{x,y,l} \lor \lnot t_{z,y,l}\]
+
+
+        \end{itemize}
+
+
+Elle assure qu'il existe au plus un état \( q' \) tel que \( \delta(q', \sigma) = q \) pour tout état \( q \) et toute lettre \( \sigma \), garantissant ainsi le déterminisme de l'automate avec ces transitions inversées.
+\end{tcolorbox}
+
+

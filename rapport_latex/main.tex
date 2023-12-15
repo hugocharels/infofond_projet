@@ -1,0 +1,168 @@
+
+\documentclass[french]{article}
+
+% Encodage et langue
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+
+% Mise en forme générale
+\usepackage{fullpage}
+\usepackage[parfill]{parskip}
+\usepackage[hidelinks]{hyperref}  % Liens hypertext
+
+% Graphiques et images
+\usepackage{graphicx}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18,legend to name={customlegend}}
+\usepgfplotslibrary{statistics}
+\usetikzlibrary{pgfplots.statistics}
+\usepackage{tikz}
+\usepackage{svg}
+\usepackage{subcaption}
+\usepackage{rotating}
+\usepackage{float} % Pour positionner les images
+
+% Mathématiques
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+% Importation de code
+\usepackage{listings}
+\usepackage{listingsutf8}
+\usepackage{xcolor}  % Couleur code
+
+% Autres utilitaires
+\usepackage{caption}
+\usepackage{enumitem}
+\usepackage{pifont}
+\usepackage{multirow}
+\usepackage{adjustbox}
+\usepackage{lipsum} % Pour du texte factice
+\usepackage{pdflscape}
+\usepackage{adjustbox}
+\usepackage{hyperref}
+\usepackage[most]{tcolorbox}
+
+% Définir le style par défaut
+\tcbset{
+  defaultstyle/.style={
+    colback=gray!5!white,
+    fonttitle=\bfseries
+    
+  }
+}
+
+
+% Pour l'indentation
+\usepackage{indentfirst} 
+\setlength{\parindent}{1em} 
+
+\usepackage{titlesec}
+\titleformat{\section}[block]{\normalfont\Large\bfseries}{}{0em}{}
+
+
+% Change font
+%\usepackage[T1]{fontenc}
+%\renewcommand*\rmdefault{}
+
+
+\begin{document}
+
+\begin{titlepage}
+	\centering
+    \includegraphics[width=1\textwidth]{log.jpg}
+    \vspace{2.5cm} 
+    
+    \noindent\rule{15cm}{0.4pt}
+    \vspace{0.25cm} 
+    {\huge\bfseries Informatique Fondamentale \par}
+    \vspace{0.5cm}
+    {\scshape\Large Projet – Apprentissage automatique de programmes de validation de chaînes de caractères \par}
+    \vspace{0.5cm}
+    \noindent\rule{15cm}{0.4pt}
+    \vfill
+
+
+% Bottom of the page
+    {\Large\scshape Issa Kevin, }
+	{\Large\scshape 514550\par}
+	{\Large\scshape Charels Hugo , }
+    {\Large\scshape 544051\par}
+    {\Large\scshape Nieto Navarrete Matias , }
+    {\Large\scshape 502920\par}
+	\vspace{0.5cm}
+	{\Large\scshape B-INFO\par}
+	\vspace{1cm}
+	{\large 15 decembre 2023\par}
+\end{titlepage}
+
+
+\tableofcontents
+\clearpage
+
+\section*{1. Introduction}
+\addcontentsline{toc}{section}{1. Introduction}
+
+Dans ce rapport\footnote{Nous avons fait appel à ChatGPT pour améliorer la syntaxe, corriger les fautes d'orthographe et améliorer le \LaTeX.}, nous explorons diverses problématiques en rapport avec la conception d'automates et la logique propositionnelle. Nous cherchons à créer des automates sous contraintes spécifiques, telles que le nombre d'états limité, la consistance avec des ensembles d'exemples positifs \( P \) et négatifs \( N \). Pour chaque problème posé, nous employons des variables booléennes afin de modéliser les transitions et les états des automates, ainsi que les exécutions des mots. Nous formulons des expressions en logique propositionnelle et les soumettons à un solveur SAT pour déterminer si un automate répondant aux critères existe et le crée.
+
+\subsection*{1.1 Variables}
+\addcontentsline{toc}{subsection}{1.1 Variables}
+\label{variable}
+
+\begin{tcolorbox}[defaultstyle,title=Construction de l'Automate]
+\begin{itemize}
+    \item[\textbullet] \( p_x \) : représente l'appartenance de l'état \( x \) à l'automate. Un état \( x \) est considéré comme présent dans l'automate si et seulement si \( p_x \) est vrai.
+    \item[\textbullet] \( a_x \) : détermine si l'état \( x \) est un état acceptant. Un mot est reconnu par l'automate si et seulement si le dernier état visité est un état acceptant, soit \( a_x \) est vrai pour cet état.
+    \item[\textbullet] \( t_{x,y,l} \) : caractérise les transitions de l'automate. La variable est vraie lorsque l'automate effectue une transition de l'état \( x \) à l'état \( y \) en lisant la lettre \( l \).
+    
+\end{itemize}
+\end{tcolorbox}
+\begin{tcolorbox}[defaultstyle,title=Exécution sur l'Automate]
+    \begin{itemize}
+        \item[\textbullet] \( v_{x, i, w} \) : représente la visite de l'état \( x \) à la position \( i \) du mot \( w \) lors de son traitement par l'automate. Cette variable est essentielle lors de l'exécution d'un mot.
+    \end{itemize}
+\end{tcolorbox}
+
+\subsubsection*{1.1.1 Transformation de Tseitin}
+\addcontentsline{toc}{subsubsection}{1.1.1 Transformation de Tseitin}
+
+
+\begin{tcolorbox}[defaultstyle,title=Transformation de Tseitin]
+\begin{itemize}
+    \item[\textbullet] \( x_{x,s,w} \) : Utilisée dans la \hyperref[contrainte 2]{contrainte 2} de la consistance.
+    \item[\textbullet] \( y_{x,y,i,w} \) : Utilisée dans la \hyperref[contrainte 5]{contrainte 5} de la consistance.
+\end{itemize}
+\end{tcolorbox}
+\vspace{0.4cm}
+
+Nous utiliserons ces variables de façon systématique pour établir la formule \( \varphi_{\text{AUT}} \) en forme normale conjonctive (FNC), qui servira à prouver l'existence d'un automate conforme aux critères établis.
+
+
+
+
+\clearpage
+\section*{2. Analyse Détaillée des Questions}
+\addcontentsline{toc}{section}{2. Analyse Détaillée des Questions}
+
+\newcommand{\customsection}[1]{%
+    \ifnum#1=8
+        \subsection*{Question #1 - BONUS}
+        \addcontentsline{toc}{subsection}{Question #1 - BONUS}
+        \input{Question#1}
+    \else
+        \subsection*{Question #1}
+        \addcontentsline{toc}{subsection}{Question #1}
+        \input{Question#1}
+    \fi
+}
+
+\foreach \n in {1,...,8}{
+    \customsection{\n}
+    \clearpage
+}
+
+\end{document}

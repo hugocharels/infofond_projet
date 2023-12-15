@@ -1,0 +1,15 @@
+
+Afin de construire un automate avec un nombre de transition maximale, il nous suffit de nous baser sur la \hyperref[question 6]{question 6} et d'appliquer le même procédé à la seule différence que cette fois-ci, nous établissons une contrainte sur le nombre de transition maximale au lieu du nombre d'états acceptants maximaux.
+\vspace{0.5cm}
+
+\addcontentsline{toc}{subsubsection}{Contrainte de Cardinalité des transitions}
+
+\begin{tcolorbox}[defaultstyle,title=Contrainte de Cardinalité des Transitions]
+La contrainte est formulée comme suit :
+
+\[ \big\lvert \{ (x, y, l) \, \vert \, \forall x, y \in \{0,\dots,k-1\}, \forall l \in \Sigma : t_{x,y,l} \} \big\rvert \leq k' \]
+
+Cette formule garantit que le nombre total de transition dans l'automate est au plus \( k' \).
+
+\end{tcolorbox}
+

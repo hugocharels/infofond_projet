@@ -1,0 +1,19 @@
+
+Dans le prolongement dans la question 1 et 2, nous voulons créer un automate complet, s'il existe. Pour cela, la fonction \texttt{gen\_autc} a été conçue pour générer un automate fini déterministe (DFA) complet sur un alphabet \( \Sigma \), consistant avec les ensembles de mots positifs \( P \) et négatifs \( N \), tout en ne dépassant pas un nombre maximal d'états \( k \). Cette fonction étend la logique précédente en ajoutant une contrainte de complétude à l'automate.
+
+\phantomsection
+\subsubsection*{Description de l'Algorithme \texttt{gen\_autc}}
+\addcontentsline{toc}{subsubsection}{Description de l'Algorithme \texttt{gen\_autc}}
+
+La fonction \texttt{gen\_autc} utilise la classe \texttt{CompAutGenerator} pour générer un ensemble de clauses SAT qui respectent non seulement les contraintes de \hyperref[cohérence]{cohérence}, de \hyperref[consistance]{consistance} et de \hyperref[determinisme]{déterminisme} mais aussi la contrainte de complétude. Le solveur SAT est ensuite utilisé pour trouver un modèle qui satisfait ces clauses. Si une solution est trouvée, l'automate est construit à l'aide de la classe \texttt{AutBuilder}; sinon, la fonction retourne \texttt{None}.
+
+\vspace{0.5cm}
+
+\phantomsection
+\addcontentsline{toc}{subsubsection}{Contrainte de Complétude}
+\begin{tcolorbox}[defaultstyle,title= Contrainte de Complétude]
+La contrainte de complétude impose que pour chaque état de l'automate, il doit exister une transition sortante pour chaque lettre de l'alphabet \( \Sigma \).\\
+
+Cette contrainte est formulée comme suit :
+\[\bigwedge\limits_{l \in \Sigma} \bigwedge\limits_{x=0}^{k-1} \bigvee\limits_{y=0}^{k-1} t_{x,y,l}\]
+\end{tcolorbox}
